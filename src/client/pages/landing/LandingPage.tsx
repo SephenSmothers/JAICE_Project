@@ -3,35 +3,18 @@
 // import localComponents from "./landing-components/"
 // import public from "/asset-filename.ext"
 
-import { useState } from 'react'
-import reactLogo from '@/client/assets/react.svg'
-import viteLogo from '/vite.svg'
+import Button from "@/client/global-components/button";
+import { useNavigate } from "react-router";
 
-export default function LandingPage() {
-  const [count, setCount] = useState(0)
+export function LandingPage() {
+  const navigate = useNavigate();
 
   return (
-    <>
-      <div className="flex justify-center gap-4 mb-4">
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div className="flex fixed inset-0 justify-center items-center overflow-auto bg-purple-300">
+      <div className="flex flex-col gap-3">
+        <h1 className="text-4xl font-bold">Landing Page</h1>
+        <Button onClick={() => navigate("/home")}>Go to Home Page</Button>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p className="text-2xl text-green-500">
-          This line is testing tailwinds import and usage.
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    </div>
+  );
 }
