@@ -3,17 +3,26 @@
 // import localComponents from "./landing-components/"
 // import public from "/asset-filename.ext"
 
-import Button from "@/client/global-components/button";
-import { useNavigate } from "react-router";
+import { LandingForm } from "./landing-components/LandingForm";
 
 export function LandingPage() {
-  const navigate = useNavigate();
-
   return (
-    <div className="flex fixed inset-0 justify-center items-center overflow-auto bg-purple-300">
-      <div className="flex flex-col gap-3">
-        <h1 className="text-4xl font-bold">Landing Page</h1>
-        <Button onClick={() => navigate("/home")}>Go to Home Page</Button>
+    <div className="flex fixed inset-0 justify-center items-center overflow-auto">
+      <div className="flex flex-col justify-evenly h-full w-full md:flex-row">
+        
+        <div className="flex flex-col h-3/2 md:h-full w-full md:w-1/2 items-center justify-center gap-3">
+          <img src="/vite.svg" className="w-32 h-32 mx-auto" />
+          <h1>JAICE</h1>
+          <div className="text-left">
+            <h2>Job Application Intelligence & Career Enhancement</h2>
+            <h3>Simplify Your Job Hunt</h3>
+          </div>
+        </div>
+
+
+        <div className="flex h-1/2 w-7/8 md:h-full w-[34rem] items-center justify-center self-center p-20">
+          <LandingForm />
+        </div>
       </div>
     </div>
   );
