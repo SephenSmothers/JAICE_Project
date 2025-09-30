@@ -11,6 +11,25 @@
   text-align: center;
 }
 
+/* Font faces */
+@font-face 
+{
+  font-family: "Baskerville";
+  src: url("/fonts/LibreBaskerville-Regular.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face 
+{
+  font-family: "Poppins";
+  src: url("/fonts/Poppins-Regular.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Base styles */
 :root 
 {
@@ -35,9 +54,9 @@
   --font-title: "Baskerville", serif;
   --font-headline: "Baskerville", serif;
 
-  --font-subheading: "poppins", sans-serif;
-  --font-body: "poppins", sans-serif;
-  --font-caption: "poppins", sans-serif;
+  --font-subheading: "Poppins", sans-serif;
+  --font-body: "Poppins", sans-serif;
+  --font-caption: "Poppins", sans-serif;
 
   /* Font Sizes */
   --fs-title: 40px;

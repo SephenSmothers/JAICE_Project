@@ -20,12 +20,12 @@ export function NavigationBar() {
     <div className="fixed inset-0">
       <div className="fixed group left-0 w-[5rem] hover:w-[15rem] h-full bg-blue-950 flex flex-col items-center p-2 gap-2">
         <div className="">
-          <h2 className="text-2xl font-bold">JAICE</h2>
+          <h2 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-title)' }}>JAICE</h2>
         </div>
         <hr className="w-full border-t-2 border-gray-400 my-2" />
         <div className="flex flex-col items-center h-full w-full justify-between group-hover:items-start">
           
-          <div className="flex flex-col items-start gap-2">
+          <div className="flex flex-col items-start gap-2" style={{ fontFamily: 'var(--font-subheading)' }}>
             <Button onClick={() => handleButtonClick("/home", "home")}
               isSelected={selectedButton === "home"}
               >Ho</Button>
@@ -39,7 +39,7 @@ export function NavigationBar() {
               >Da</Button>
           </div>
           
-          <div className="flex flex-col items-start gap-2">
+          <div className="flex flex-col items-start gap-2" style={{ fontFamily: 'var(--font-subheading)' }}>
             <Button onClick={() => handleButtonClick("/settings/account", "account")}
               isSelected={selectedButton === "account"}
               >Acc</Button>
