@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FloatingInputField } from "./FloatingInputField";
+import { FloatingInputField } from "@/client/global-components/FloatingInputField";
 import Button from "@/client/global-components/button";
 import { useNavigate } from "react-router";
 
