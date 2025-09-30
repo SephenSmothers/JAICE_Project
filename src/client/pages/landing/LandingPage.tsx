@@ -11,10 +11,13 @@ export function LandingPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="flex fixed inset-0 justify-center items-center overflow-auto">
-      <div className="flex flex-col justify-evenly h-full w-full md:flex-row">
+    <div className="fixed inset-0 grow bg-blue-900">
+
+      {/* *Primary Container */}
+      <div className="flex flex-col w-full gap-5  p-10 bg-blue-600">
         
-        <div className="flex flex-col w-7/8 h-3/2 md:h-full items-center justify-center self-center gap-3">
+        {/* *Info Container */}
+        <div className="flex flex-col items-center text-center h-1/2 justify-center bg-blue-400">
           <img src="/vite.svg" className="w-32 h-32 mx-auto" />
           <h1>JAICE</h1>
           <div className="text-left">
@@ -23,10 +26,15 @@ export function LandingPage() {
           </div>
         </div>
 
-        <div className="flex h-1/2 w-7/8 md:h-full w-[34rem] items-center justify-center self-center p-20">
-          <LandingForm />
+        {/* *Form Container */}
+        <div className="bg-blue-400">
+          <div className="">
+            <LandingForm />
+          </div>
         </div>
       </div>
+
+      {/* *Floating Button Container */}
       <div className="fixed top-0 left-0 m-4">
         <Button onClick={() => navigate("/about")}>About</Button>
       </div>

@@ -18,7 +18,6 @@ export default function Button({
   return (
     <button
       onClick={onClick}
-      className="btn"
       type={type}
       disabled={disabled}
       aria-pressed={selected}
