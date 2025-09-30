@@ -5,9 +5,16 @@
 
 import Button from "@/client/global-components/button";
 import { Outlet, useNavigate } from "react-router";
+import { useState } from "react";
 
 export function NavigationBar() {
   const navigate = useNavigate();
+  const [selectedButton, setSelectedButton] = useState<string>("");
+
+  const handleButtonClick = (route: string, buttonId: string) => {
+    setSelectedButton(buttonId);
+    navigate(route);
+  };
 
   return (
     <div className="fixed inset-0">
@@ -19,16 +26,35 @@ export function NavigationBar() {
         <div className="flex flex-col items-center h-full w-full justify-between group-hover:items-start">
           
           <div className="flex flex-col items-start gap-2">
-            <Button onClick={() => navigate("/home")}>Ho</Button>
-            <Button onClick={() => navigate("/about")}>Ab</Button>
-            <Button onClick={() => navigate("/dashboard")}>Da</Button>
+            <Button onClick={() => handleButtonClick("/home", "home")}
+              isSelected={selectedButton === "home"}
+              >Ho</Button>
+
+            <Button onClick={() => handleButtonClick("/about", "about")}
+              isSelected={selectedButton === "about"}
+              >Ab</Button>
+
+            <Button onClick={() => handleButtonClick("/dashboard", "dashboard")}
+              isSelected={selectedButton === "dashboard"}
+              >Da</Button>
           </div>
           
           <div className="flex flex-col items-start gap-2">
-            <Button onClick={() => navigate("/settings/account")}>Acc</Button>
-            <Button onClick={() => navigate("/settings/accessibility")}>Ac</Button>
-            <Button onClick={() => navigate("/settings/notification")}>No</Button>
-            <Button onClick={() => navigate("/")}>Q</Button>
+            <Button onClick={() => handleButtonClick("/settings/account", "account")}
+              isSelected={selectedButton === "account"}
+              >Acc</Button>
+
+            <Button onClick={() => handleButtonClick("/settings/accessibility", "accessibility")}
+              isSelected={selectedButton === "accessibility"}
+              >Ac</Button>
+
+            <Button onClick={() => handleButtonClick("/settings/notification", "notification")}
+              isSelected={selectedButton === "notification"}
+              >No</Button>
+
+            <Button onClick={() => handleButtonClick("/", "quit")}
+              isSelected={selectedButton === "quit"}
+              >Q</Button>
           </div>
         </div>
       </div>
