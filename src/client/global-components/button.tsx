@@ -1,27 +1,20 @@
 import React from "react";
 
-interface ButtonProps {
-  onClick?: () => void;
-  children: React.ReactNode;
-  type?: "button" | "submit" | "reset";
-  disabled?: boolean;
-  selected?: boolean;
-}
-
 export default function Button({
   onClick,
   children,
-  type = "button",
-  disabled = false,
-  selected = false,
-}: ButtonProps) {
+  isSelected = false,
+}: {
+  onClick: () => void;
+  children: React.ReactNode;
+  isSelected?: boolean;
+}) {
   return (
-    <button
-      onClick={onClick}
-      type={type}
-      disabled={disabled}
-      aria-pressed={selected}
-    >
+    <button onClick={() => { 
+      onClick?.();            // run onClick function if it exists
+      
+    }} className={`button ${isSelected ? "selected" : ""}`}
+      >
       {children}
     </button>
   );

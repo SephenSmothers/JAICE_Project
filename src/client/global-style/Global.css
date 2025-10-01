@@ -68,34 +68,41 @@
 
 /* Typography */
 /* Title and Headline */
-h1, h2 {
+h1, h2 
+{
   font-family: var(--font-title);
 }
 
-h1 {
+h1 
+{
   font-size: var(--fs-title);
 }
 
-h2 {
+h2
+{
   font-size: var(--fs-headline);
 }
 
 /* All other text */
-h3, h4, h5, h6, p, span, small, label, button, input, textarea, div {
+h3, h4, h5, h6, p, span, small, label, button, input, textarea, div 
+{
   font-family: var(--font-body);
 }
 
-h3 {
+h3 
+{
   font-size: var(--fs-subheading);
 }
-h4, h5, h6, p, span, label, button, input, textarea, div {
+
+h4, h5, h6, p, span, label, button, input, textarea, div 
+{
   font-size: var(--fs-body);
 }
 
-small {
+small 
+{
   font-size: var(--fs-caption);
 }
-
 
 
 /* Button styles */
@@ -140,4 +147,12 @@ html, body
   display: flex;
   width: 100%;
   height: 100%;
+}
+
+/* Icons */
+
+/* makes icons light blue */
+button img 
+{
+  filter: brightness(0) saturate(100%) invert(81%) sepia(11%) saturate(464%) hue-rotate(170deg) brightness(95%) contrast(85%);
 }
