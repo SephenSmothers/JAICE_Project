@@ -1,0 +1,98 @@
+import { CheckBoxToggle } from "@/client/global-components/CheckBoxToggle";
+import { MenuSelector } from "@/client/global-components/MenuSelector";
+import { SearchBar } from "@/client/global-components/SearchBar";
+import filterIcon from "@/client/assets/icons/filter.svg";
+
+
+/**
+ * Control Bar Props
+ * @param isMultiSelecting - Boolean indicating if multi-select mode is active
+ * @param setIsMultiSelecting - Function to update the multi-select state
+ * @param multiSelectLabel - Optional label to display next to the multi-select checkbox
+ * @param options - Array of option objects with value and label for the menu selector
+ * @param isOpen - Boolean indicating if the menu selector is open
+ * @param setIsOpen - Function to update the open state of the menu selector
+ * @param selectedOption - Currently selected option value in the menu selector
+ * @param setSelectedOption - Function to update the selected option in the menu selector
+ * @param isSearching - Boolean indicating if the search bar is active
+ * @param setIsSearching - Function to update the searching state
+ * @param searchQuery - Current value of the search query
+ * @param setSearchQuery - Function to update the search query
+ */
+interface ControlBarProps {
+  isMultiSelecting: boolean;
+  setIsMultiSelecting: (value: boolean) => void;
+  multiSelectLabel?: string;
+
+  options: { value: string; label: string }[];
+  isOpen: boolean;
+  selectedOption: string;
+  setIsOpen: (value: boolean) => void;
+  setSelectedOption: (value: string) => void;
+
+  isSearching: boolean;
+  setIsSearching: (value: boolean) => void;
+  searchQuery: string;
+  setSearchQuery: (value: string) => void;
+}
+
+
+/**
+ * Control Bar Component
+ *
+ * A custom component for the homepage that bundles the search bar, the menu selector, and the multi-select checkbox toggle.
+ *
+ * @param isMultiSelecting - Boolean indicating if multi-select mode is active
+ * @param setIsMultiSelecting - Function to update the multi-select state
+ * @param multiSelectLabel - Optional label to display next to the multi-select checkbox
+ * @param options - Array of option objects with value and label for the menu selector
+ * @param isOpen - Boolean indicating if the menu selector is open
+ * @param setIsOpen - Function to update the open state of the menu selector
+ * @param selectedOption - Currently selected option value in the menu selector
+ * @param setSelectedOption - Function to update the selected option in the menu selector
+ * @param isSearching - Boolean indicating if the search bar is active
+ * @param setIsSearching - Function to update the searching state
+ * @param searchQuery - Current value of the search query
+ * @param setSearchQuery - Function to update the search query
+ * @returns A control bar component containing a search bar, a menu selector, and a multi-select checkbox toggle.
+ */
+export function ControlBar({
+  isMultiSelecting,
+  setIsMultiSelecting,
+  multiSelectLabel,
+
+  options,
+  isOpen,
+  setIsOpen,
+  selectedOption,
+  setSelectedOption,
+
+  isSearching,
+  setIsSearching,
+  searchQuery,
+  setSearchQuery,
+}: ControlBarProps) {
+  return (
+    <div className="w-full flex items-center justify-end gap-4">
+      <SearchBar 
+        isSearching={isSearching}
+        setIsSearching={setIsSearching}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+      />
+      <MenuSelector
+        options={options}
+        isOpen={isOpen}
+        selectedOption={selectedOption}
+        setIsOpen={setIsOpen}
+        setSelectedOption={setSelectedOption}
+        leftIcon={filterIcon}
+      />
+      <CheckBoxToggle
+        label={multiSelectLabel}
+        isChecked={isMultiSelecting}
+        setIsChecked={setIsMultiSelecting}
+      />
+    </div>
+  );
+}
