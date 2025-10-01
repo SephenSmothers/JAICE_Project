@@ -11,26 +11,26 @@ export function LandingPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="fixed inset-0 grow bg-blue-900">
-
-      {/* *Primary Container */}
-      <div className="flex flex-col w-full gap-5  p-10 bg-blue-600">
-        
-        {/* *Info Container */}
-        <div className="flex flex-col items-center text-center h-1/2 justify-center bg-blue-400">
+    <div className="flex flex-col gap-10 min-h-screen p-[2rem]">
+      {/* *Top Container */}
+      <div className="flex w-full px-[2rem] py-[4rem] items-center justify-center">
+        {/* Inner Container */}
+        <div className="flex flex-col items-center gap-5 p-8 justify-center">
           <img src="/vite.svg" className="w-32 h-32 mx-auto" />
           <h1>JAICE</h1>
           <div className="text-left">
-            <h2>Job Application Intelligence & Career Enhancement</h2>
-            <h3>Simplify Your Job Hunt</h3>
+            <h1>Job Application Intelligence</h1>
+            <h1>& Career Enhancement</h1>
           </div>
+          <h2>Simplify Your Job Hunt</h2>
         </div>
+      </div>
 
-        {/* *Form Container */}
-        <div className="bg-blue-400">
-          <div className="">
-            <LandingForm />
-          </div>
+      {/* *Form Container */}
+      <div className="flex w-full  px-[2rem] py-[4rem] items-center justify-center">
+        {/* Inner Container */}
+        <div className="flex flex-col w-[30rem]">
+          <LandingForm />
         </div>
       </div>
 
