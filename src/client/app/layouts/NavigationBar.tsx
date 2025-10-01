@@ -169,8 +169,8 @@ export function NavigationBar()
 
                   </ul>
                 </section>
+              </div>
             </div>
-          </div>
         </nav>
 
       <main className="ml-[5rem] h-full overflow-auto">
