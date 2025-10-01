@@ -8,7 +8,8 @@
   margin: 0 auto;
   text-align: center;
   width: 100%;
-  height: 100%; 
+  height: 100vh;
+  overflow: visible;
 }
 
 /* Font faces */
@@ -158,10 +159,9 @@ html, body
   margin: 0;
   display: flex;
   width: 100%;
-  height: 100%;
-  overflow: auto;
-
+  height: 100vh;
   color: var(--text-color-primary);
+  overflow: auto;
 }
 
 /* Icons */

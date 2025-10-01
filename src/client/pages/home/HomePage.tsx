@@ -6,10 +6,39 @@
 export function HomePage() {
 
   return (
-    <div className="w-full h-full flex items-center justify-center flex-col gap-4 bg-blue-300">
+    <div className="w-full h-full flex items-center justify-center flex-col overflow-y-auto">
       <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+      <h1 className="text-4xl font-bold">Home Page</h1>
+
     </div>
   );
 }
-
-//this wouldn't actually end up in this file, just an example of how to use the router
