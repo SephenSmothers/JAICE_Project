@@ -1,5 +1,5 @@
 import { CheckBoxToggle } from "@/client/global-components/CheckBoxToggle";
-import { MenuSelector } from "@/client/global-components/MenuSelector";
+import { DropDownMenu } from "@/client/global-components/DropDownMenu";
 import { SearchBar } from "@/client/global-components/SearchBar";
 import filterIcon from "@/client/assets/icons/filter.svg";
 
@@ -73,14 +73,14 @@ export function ControlBar({
   setSearchQuery,
 }: ControlBarProps) {
   return (
-    <div className="w-full flex items-center justify-end gap-4">
+    <div className="w-full h-[50px] flex items-center justify-end gap-4">
       <SearchBar 
         isSearching={isSearching}
         setIsSearching={setIsSearching}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
       />
-      <MenuSelector
+      <DropDownMenu
         options={options}
         isOpen={isOpen}
         selectedOption={selectedOption}

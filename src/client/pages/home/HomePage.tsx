@@ -5,6 +5,7 @@
 
 import { useState } from "react";
 import { ControlBar } from "./home-components/ControlBar";
+import { Column } from "./home-components/Column";
 
 export function HomePage() {
   // State for multi-selection
@@ -23,6 +24,12 @@ export function HomePage() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const columns = [
+    { id: 1, title: "Applied", bg: "var(--color-light-purple)", count: 10 },
+    { id: 2, title: "Interview", bg: "var(--color-teal)", count: 5 },
+    { id: 3, title: "Offers", bg: "var(--color-dark-purple)", count: 35 },
+    { id: 4, title: "Accepted", bg: "var(--color-blue-gray)", count: 8 },
+  ];
 
   return (
     <div className="w-full h-full flex items-center justify-center flex-col ">
@@ -44,37 +51,17 @@ export function HomePage() {
           setSearchQuery={setSearchQuery}
         />
 
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
-        <h1 className="text-4xl font-bold">Home Page</h1>
+        {/* Kan Ban Columns */}
+        <div className="flex gap-4 w-full">
+          {columns.map((column) => (
+            <Column
+              key={column.id}
+              title={column.title}
+              backgroundColor={column.bg}
+              count={column.count}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

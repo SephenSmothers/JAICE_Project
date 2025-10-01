@@ -10,7 +10,7 @@ import circleXIcon from "@/client/assets/icons/circle-xmark.svg";
  * @param setSelectedOption - Function to update the selected option
  * @param leftIcon - Icon to display on the left side of the menu
  */
-interface MenuSelectorProps {
+interface DropDownMenuProps {
   options: { value: string; label: string }[];
   isOpen: boolean;
   selectedOption: string;
@@ -21,7 +21,7 @@ interface MenuSelectorProps {
 
 
 /**
- * Menu Selector Component
+ * Drop Down Menu Component
  * 
  * Creates a dropdown menu for selecting options. Displays a left icon and handles open/close state on hover and selection
  * @param options - Array of option objects with value and label
@@ -32,14 +32,14 @@ interface MenuSelectorProps {
  * @param leftIcon - Icon to display on the left side of the menu
  * @returns A Drop down menu that will expand when hovered over, and collapse when set to the default value and the mouse leaves the area.
  */
-export function MenuSelector({
+export function DropDownMenu({
   options,
   isOpen,
   setIsOpen,
   selectedOption,
   setSelectedOption,
   leftIcon,
-}: MenuSelectorProps) {
+}: DropDownMenuProps) {
   const menuStyle: React.CSSProperties = {
     color: "white",
     borderRadius: "0.5rem",
