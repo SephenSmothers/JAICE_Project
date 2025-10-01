@@ -14,6 +14,7 @@ export function LogIn() {
     e.preventDefault();
     setSubmit(true);
     console.log("Form submitted with:", { email, password });
+    console.log("Submit Pressed", submit);
     navigate("/home");
   };
 
@@ -32,7 +33,7 @@ export function LogIn() {
           value={password}
           action={setPassword}
         />
-        <Button type="submit">
+        <Button onClick={() => {}}>
           Log In
         </Button>
       </form>

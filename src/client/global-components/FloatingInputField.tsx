@@ -10,8 +10,6 @@ export function FloatingInputField({
   action: (value: string) => void;
 }) {
   const inputID = label.toLowerCase().replace(/\s+/g, "-");
-  const restColor = "[var(--color-blue-4)]";
-  const focusColor = "[var(--color-blue-5)]";
 
   return (
     <div className="relative">
@@ -25,15 +23,15 @@ export function FloatingInputField({
         pt-4 
         w-full 
         text-sm 
-        text-${focusColor} 
+        text-[var(--color-blue-5)] 
         bg-transparent 
         rounded-lg 
         border-1 
-        border-${restColor}
+        border-[var(--color-blue-4)]
         appearance-none 
         focus:outline-none 
         focus:ring-0 
-        focus:border-${focusColor}
+        focus:border-[var(--color-blue-5)]
         peer
         `}
         placeholder=" "
@@ -47,7 +45,7 @@ export function FloatingInputField({
         className={`
         absolute 
         text-sm 
-        text-${restColor}
+        text-[var(--color-blue-4)]
         duration-300 
         transform 
         -translate-y-4 
@@ -59,7 +57,7 @@ export function FloatingInputField({
         backdrop-blur-xl
         px-2 
         peer-focus:px-2 
-        peer-focus:text-${focusColor} 
+        peer-focus:text-[var(--color-blue-5)] 
         peer-placeholder-shown:scale-100 
         peer-placeholder-shown:-translate-y-1/2 
         peer-placeholder-shown:top-1/2 

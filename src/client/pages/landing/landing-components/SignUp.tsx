@@ -18,6 +18,7 @@ export function SignUp() {
     console.log("Form submitted with:", { email, password });
     console.log("Emails match:", email === confirmEmail);
     console.log("Passwords match:", password === confirmPassword);
+    console.log("Submit Pressed", submit);
     navigate("/home");
   };
 
@@ -48,7 +49,7 @@ export function SignUp() {
           value={confirmPassword}
           action={setConfirmPassword}
         />
-        <Button type="submit">
+        <Button onClick={() => {}}>
           Sign Up
         </Button>
       </form>
