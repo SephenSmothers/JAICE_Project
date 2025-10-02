@@ -17,8 +17,7 @@ export function LandingPage() {
       <div className="flex w-full px-[2rem] py-[4rem] items-center justify-center">
         {/* Inner Container */}
         <div className="flex flex-col items-center gap-5 p-8 justify-center">
-          <img src="/vite.svg" className="w-32 h-32 mx-auto" />
-          <h1>JAICE</h1>
+          <img src="/JAICE_logo.png" className="w-120 h-120 mx-auto" />
           <div className="text-left">
             <h1>Job Application Intelligence</h1>
             <h1>& Career Enhancement</h1>
