@@ -36,6 +36,7 @@
 {
   /* Colors */
   --color-bg: #1E1C20;
+  --color-bg-rgb: 30, 28, 32;
 
   /* Blues */
   --color-blue-1: #192836; /* Dark Blue (Sidebar Background) */
