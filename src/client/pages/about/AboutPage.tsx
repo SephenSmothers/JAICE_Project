@@ -144,115 +144,117 @@ function TeamGrid({
 export function AboutPage() {
 
   return (
-    <main className="relative mx-auto max-w-7xl px-4 md:px-8 min-h-screen overflow-x-hidden">
-      {/* HERO / ABOUT */}
-      <section className="relative w-full pt-14 md:pt-20">
-        <div className="mx-auto max-w-none px-4 md:px-8 flex flex-wrap items-center justify-start gap-6 md:gap-10">
-          <h1
-            className="font-extrabold leading-none tracking-tight whitespace-nowrap"
-            style={{ fontSize: "clamp(4rem, 8vw, 9rem)" }} // Issue getting font to needed size: This forces the font to be larger.
-          >
-            ABOUT
-          </h1>
+    <div style={{background: "var(--color-bg-alt)"}} className="min-h-screen">
+      <main className="relative mx-auto max-w-7xl px-4 md:px-8 min-h-screen overflow-x-hidden">
+        {/* HERO / ABOUT */}
+        <section className="relative w-full pt-14 md:pt-20">
+          <div className="mx-auto max-w-none px-4 md:px-8 flex flex-wrap items-center justify-start gap-6 md:gap-10">
+            <h1
+              className="font-extrabold leading-none tracking-tight whitespace-nowrap"
+              style={{ fontSize: "clamp(4rem, 8vw, 9rem)" }} // Issue getting font to needed size: This forces the font to be larger.
+            >
+              ABOUT
+            </h1>
 
-          <img
-            src="/JAICE_logo.png" // May need to swap with SVG if drop shadow effect is not correct. 
-            alt="JAICE logo"
-            className="h-[clamp(220px,22vw,520px)] sm:h-56 md:h-72 lg:h-96 xl:h-[30rem] w-auto select-none"
-            draggable={false}
-          />
-
-        </div>
-      </section>
-
-      {/* About & Philosophy blocks */}
-      <Section
-        id="about"
-        reverse
-        copy={[
-          ["JAICE (Job Application Intelligence & Career Enhancement) is designed to give job seekers more control and confidence throughout their career journey.",
-            "We understand that the hiring process can often feel overwhelming, with countless applications to track, deadlines to meet, and opportunities that can easily slip through the cracks.",
-            "That's why JAICE simplifies the search by organizing applications, tracking pipelines, and surfacing AI-powered insights like Grit Score and personalized recommendations.",
-            "Our platform doesn't just keep things organized — it  actively empoweres job seekers by identifying strengths, matching them with the right opportunities, and offering real-time guidance to improve success.",
-            "By combining data-driven intelligence with a user-friendly experience, we make sure that every applicant has a clearer path forward.",
-            "With JAICE, your job search isn't just about applying — it's about applying smarter, with purpose and confidence."].join(" ")
-        ]}
-        aside={
-          <img
-            src="/job-application.png"
-            alt="Person completing a job application on a laptop"
-            className="rounded-3xl shadow-2xl ring-1 ring-white/10 drop-shadow-[0_18px_40px_rgba(0,0,0,0.35)] object-cover aspect-[16/9] md:aspect-[5/3] object-center"
-            loading="eager"
-            decoding="async"
-          />
-        }
-      >
-
-        <div className="space-y-2">
-          <h1 className="text-2xl md:text-3xl font-semibold">Our Philosophy</h1>
-          <p className="opacity-90 leading-relaxed">
-            With JAICE, we believe job seekers deserve tools that simplify the search while offering the power of Artificial Intelligence to maximize opportunities.
-          </p>
-        </div>
-      </Section>
-
-      {/* Meet the Team */}
-      <TeamGrid
-        title="MEET THE TEAM"
-        people={[
-          { id: "t1", name: "Teammate 1", role: "Developer", avatar: "/user1.png" },
-          { id: "t2", name: "Teammate 2", role: "Developer", avatar: "/user2.png" },
-          { id: "t3", name: "Teammate 3", role: "Developer", avatar: "/user1.png" },
-          { id: "t4", name: "Teammate 4", role: "Developer", avatar: "/user1.png" },
-        ]}
-      />
-
-      {/* Impact Section */}
-      <Section
-        id="impact"
-        title="OUR IMPACT"
-        copy={[
-          ["At JAICE, we are building tools that redefine the way job seekers approach applications and career opportunities.",
-            "Every feature is designed to empower users and simplify their journey."].join(" ")
-        ]}
-        aside={
             <img
-              src="/impact.png"
-              alt="Professional reviewing applications at a desk"
-              className="self-start ml-8 rounded-3xl shadow-xl w-auto h-auto max-h-[280px] md:max-h-[450px] block object-contain"
+              src="/JAICE_logo.png" // May need to swap with SVG if drop shadow effect is not correct. 
+              alt="JAICE logo"
+              className="h-[clamp(220px,22vw,520px)] sm:h-56 md:h-72 lg:h-96 xl:h-[30rem] w-auto select-none"
+              draggable={false}
+            />
+
+          </div>
+        </section>
+
+        {/* About & Philosophy blocks */}
+        <Section
+          id="about"
+          reverse
+          copy={[
+            ["JAICE (Job Application Intelligence & Career Enhancement) is designed to give job seekers more control and confidence throughout their career journey.",
+              "We understand that the hiring process can often feel overwhelming, with countless applications to track, deadlines to meet, and opportunities that can easily slip through the cracks.",
+              "That's why JAICE simplifies the search by organizing applications, tracking pipelines, and surfacing AI-powered insights like Grit Score and personalized recommendations.",
+              "Our platform doesn't just keep things organized — it  actively empoweres job seekers by identifying strengths, matching them with the right opportunities, and offering real-time guidance to improve success.",
+              "By combining data-driven intelligence with a user-friendly experience, we make sure that every applicant has a clearer path forward.",
+              "With JAICE, your job search isn't just about applying — it's about applying smarter, with purpose and confidence."].join(" ")
+          ]}
+          aside={
+            <img
+              src="/job-application.png"
+              alt="Person completing a job application on a laptop"
+              className="rounded-3xl shadow-2xl ring-1 ring-white/10 drop-shadow-[0_18px_40px_rgba(0,0,0,0.35)] object-cover aspect-[16/9] md:aspect-[5/3] object-center"
               loading="eager"
               decoding="async"
             />
-        }
-      >
-        <ul className="grid gap-4">
-          <li>
-            <p className="font-semibold tracking-wide">SMART APPLICATION SORTING</p>
-            <p className="opacity-90">
-              Automatically organizes your job applications into stages (Applied, Interview, Offer, etc.) so you can focus on the next step.
+          }
+        >
+
+          <div className="space-y-2">
+            <h1 className="text-2xl md:text-3xl font-semibold">Our Philosophy</h1>
+            <p className="opacity-90 leading-relaxed">
+              With JAICE, we believe job seekers deserve tools that simplify the search while offering the power of Artificial Intelligence to maximize opportunities.
             </p>
-          </li>
-          <li>
-            <p className="font-semibold tracking-wide">AI-POWERED MATCHING</p>
-            <p className="opacity-90">
-              Analyzes your resume and job descriptions to highlight best-fit opportunities and suggest improvements.
-            </p>
-          </li>
-          <li>
-            <p className="font-semibold tracking-wide">PERSONALIZED INSIGHTS</p>
-            <p className="opacity-90">
-              Provides tailored career recommendations based on your skills, experiences, and market trends.
-            </p>
-          </li>
-          <li>
-            <p className="font-semibold tracking-wide">EFFICIENCY & CLARITY</p>
-            <p className="opacity-90">
-              Saves time by cutting through clutter and giving you a clear view of your progress and opportunities
-            </p>
-          </li>
-        </ul>
-      </Section>
-    </main>
+          </div>
+        </Section>
+
+        {/* Meet the Team */}
+        <TeamGrid
+          title="MEET THE TEAM"
+          people={[
+            { id: "t1", name: "Teammate 1", role: "Developer", avatar: "/user1.png" },
+            { id: "t2", name: "Teammate 2", role: "Developer", avatar: "/user2.png" },
+            { id: "t3", name: "Teammate 3", role: "Developer", avatar: "/user1.png" },
+            { id: "t4", name: "Teammate 4", role: "Developer", avatar: "/user1.png" },
+          ]}
+        />
+
+        {/* Impact Section */}
+        <Section
+          id="impact"
+          title="OUR IMPACT"
+          copy={[
+            ["At JAICE, we are building tools that redefine the way job seekers approach applications and career opportunities.",
+              "Every feature is designed to empower users and simplify their journey."].join(" ")
+          ]}
+          aside={
+              <img
+                src="/impact.png"
+                alt="Professional reviewing applications at a desk"
+                className="self-start ml-8 rounded-3xl shadow-xl w-auto h-auto max-h-[280px] md:max-h-[450px] block object-contain"
+                loading="eager"
+                decoding="async"
+              />
+          }
+        >
+          <ul className="grid gap-4">
+            <li>
+              <p className="font-semibold tracking-wide">SMART APPLICATION SORTING</p>
+              <p className="opacity-90">
+                Automatically organizes your job applications into stages (Applied, Interview, Offer, etc.) so you can focus on the next step.
+              </p>
+            </li>
+            <li>
+              <p className="font-semibold tracking-wide">AI-POWERED MATCHING</p>
+              <p className="opacity-90">
+                Analyzes your resume and job descriptions to highlight best-fit opportunities and suggest improvements.
+              </p>
+            </li>
+            <li>
+              <p className="font-semibold tracking-wide">PERSONALIZED INSIGHTS</p>
+              <p className="opacity-90">
+                Provides tailored career recommendations based on your skills, experiences, and market trends.
+              </p>
+            </li>
+            <li>
+              <p className="font-semibold tracking-wide">EFFICIENCY & CLARITY</p>
+              <p className="opacity-90">
+                Saves time by cutting through clutter and giving you a clear view of your progress and opportunities
+              </p>
+            </li>
+          </ul>
+        </Section>
+      </main>
+    </div>
   );
 }
 

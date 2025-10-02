@@ -11,7 +11,8 @@ export function LandingPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="flex flex-col gap-10 min-h-screen p-[2rem] md:flex-row overflow-auto">
+    <div className="flex flex-col gap-10 min-h-screen p-[2rem] md:flex-row overflow-auto"
+      style={{background: "var(--color-bg-alt)"}}>
       {/* *Top Container */}
       <div className="flex w-full px-[2rem] py-[4rem] items-center justify-center">
         {/* Inner Container */}
