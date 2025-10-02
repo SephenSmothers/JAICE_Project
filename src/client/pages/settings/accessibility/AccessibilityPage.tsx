@@ -13,7 +13,8 @@ export function AccessibilityPage() {
   const [contrast, setContrast] = React.useState<number>(1); // 0..3
 
   return (
-    <div className="w-full h-full bg-slate-950 text-slate-100">
+    <div className="w-full h-full bg-slate-950 text-slate-100"
+    style={{background: "var(--color-bg)"}}>
       <main className="mx-auto max-w-6xl px-6 py-10">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
           {/* Left heading */}

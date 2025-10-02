@@ -8,7 +8,8 @@ import React from "react";
 
 export function NotificationPage() {
   return (
-    <div className="w-full h-full bg-slate-950 text-slate-100">
+    <div className="w-full h-full bg-slate-950 text-slate-100"
+    style={{background: "var(--color-bg)"}}>
 
       {/* Main */}
       <main className="mx-auto max-w-6xl px-6 py-10">
