@@ -25,7 +25,7 @@ function Section({
 }) {
   return (
     <section id={id} className="py-12 md:py-20">
-      {(eyebrow && title) && (
+      {(eyebrow || title) && (
         <header className="mb-8">
           {eyebrow && (
             <span className="inline-block rounded-full bg-white/10 px-3 py-1 text-sm tracking-wide">
@@ -72,7 +72,7 @@ function TeamGrid({
         {title}
       </h2>
 
-      <div className="grid grid-cols-2 gap-6 md:grid-col-4 md:gap-8">
+      <div className="grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-8">
         {people.map((p, index) => {
           const isActive = active === p.id;
           // This is to choose which side to anchor the callout line (match the wireframe)
@@ -141,12 +141,12 @@ function TeamGrid({
 export function AboutPage() {
 
   return (
-    <main className="relative mx-auto max-w-7xl px-4 md:px-8">
+    <main className="relative mx-auto max-w-7xl px-4 md:px-8 min-h-screen overflow-x-hidden">
       {/* HERO / ABOUT */}
       <section className="relative w-full pt-14 md:pt-20">
         <div className="mx-auto max-w-none px-4 md:px-8 flex flex-wrap items-center justify-start gap-6 md:gap-10">
           <h1
-            className="font-serif font-extrabold leading-none tracking-tight whitespace-nowrap"
+            className="font-extrabold leading-none tracking-tight whitespace-nowrap"
             style={{ fontSize: "clamp(4rem, 8vw, 9rem)" }} // Issue getting font to needed size: This forces the font to be larger.
           >
             ABOUT
@@ -155,7 +155,7 @@ export function AboutPage() {
           <img
             src="/JAICE_logo.png" // May need to swap with SVG if drop shadow effect is not correct. 
             alt="JAICE logo"
-            className="h-[clamp(220px,22vw,520px)] sm:h-56 md:h-72 lg:h-96 xl:h-[26rem] w-auto select-none"
+            className="h-[clamp(220px,22vw,520px)] sm:h-56 md:h-72 lg:h-96 xl:h-[30rem] w-auto select-none"
             draggable={false}
           />
 
@@ -167,7 +167,12 @@ export function AboutPage() {
         id="about"
         reverse
         copy={[
-          "JAICE (Job Application Intelligence & Career Enhancement) helps job seekers organize applications, track their pipeline, and surface AI-powered insights like Grit Score and tailored recommendations."
+          ["JAICE (Job Application Intelligence & Career Enhancement) is designed to give job seekers more control and confidence throughout their career journey.",
+          "We understand that the hiring process can often feel overwhelming, with countless applications to track, deadlines to meet, and opportunities that can easily slip through the cracks.",
+          "That's why JAICE simplifies the search by organizing applications, tracking pipelines, and surfacing AI-powered insights like Grit Score and personalized recommendations.",
+          "Our platform doesn't just keep things organized — it  actively empoweres job seekers by identifying strengths, matching them with the right opportunities, and offering real-time guidance to improve success.",
+          "By combining data-driven intelligence with a user-friendly experience, we make sure that every applicant has a clearer path forward.",
+          "With JAICE, your job search isn't just about applying — it's about applying smarter, with purpose and confidence."].join(" ")
         ]}
         aside={
           <img
@@ -181,7 +186,7 @@ export function AboutPage() {
       >
 
         <div className="space-y-2">
-          <h3 className="text-2xl md:text-3xl font-serif font-semibold">Our Philosophy</h3>
+          <h1 className="text-2xl md:text-3xl font-semibold">Our Philosophy</h1>
           <p className="opacity-90 leading-relaxed">
             With JAICE, we believe job seekers deserve tools that simplify the search while offering the power of Artificial Intelligence to maximize opportunities.
           </p>
