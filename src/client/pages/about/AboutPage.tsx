@@ -24,7 +24,7 @@ function Section({
   reverse?: boolean;
 }) {
   return (
-    <section id={id} className="py-12 md:py-20">
+    <section id={id} className="py-6 md:py-10">
       {(eyebrow || title) && (
         <header className="mb-8">
           {eyebrow && (
@@ -33,7 +33,8 @@ function Section({
             </span>
           )}
           {title && (
-            <h2 className="mt-3 text-4xl md:text-6xl font-serif font-bold tracking-tight">
+            <h2 className="mt-3 text-4xl md:text-6xl font-bold tracking-tight"
+              style={{ fontSize: "clamp(3rem, 6vw, 7rem)" }}>
               {title}
             </h2>
           )}
@@ -67,11 +68,13 @@ function TeamGrid({
   const [active, setActive] = React.useState<string | null>(null);
 
   return (
-    <section className="py-16 md:py-24">
-      <h2 className="mb-10 text-center text-4xl md:text-6xl font-serif font-bold tracking-tight">
+    <section className="py-8 md:py-12">
+      <h2 className="mb-10 text-center text-4xl md:text-6xl font-bold tracking-tight"
+        style={{ fontSize: "clamp(3rem, 6vw, 7rem)" }}>
         {title}
       </h2>
 
+      // TODO: Need to fix the callout lines to match the wireframe. Currently appears within the card per teammate.
       <div className="grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-8">
         {people.map((p, index) => {
           const isActive = active === p.id;
@@ -168,11 +171,11 @@ export function AboutPage() {
         reverse
         copy={[
           ["JAICE (Job Application Intelligence & Career Enhancement) is designed to give job seekers more control and confidence throughout their career journey.",
-          "We understand that the hiring process can often feel overwhelming, with countless applications to track, deadlines to meet, and opportunities that can easily slip through the cracks.",
-          "That's why JAICE simplifies the search by organizing applications, tracking pipelines, and surfacing AI-powered insights like Grit Score and personalized recommendations.",
-          "Our platform doesn't just keep things organized — it  actively empoweres job seekers by identifying strengths, matching them with the right opportunities, and offering real-time guidance to improve success.",
-          "By combining data-driven intelligence with a user-friendly experience, we make sure that every applicant has a clearer path forward.",
-          "With JAICE, your job search isn't just about applying — it's about applying smarter, with purpose and confidence."].join(" ")
+            "We understand that the hiring process can often feel overwhelming, with countless applications to track, deadlines to meet, and opportunities that can easily slip through the cracks.",
+            "That's why JAICE simplifies the search by organizing applications, tracking pipelines, and surfacing AI-powered insights like Grit Score and personalized recommendations.",
+            "Our platform doesn't just keep things organized — it  actively empoweres job seekers by identifying strengths, matching them with the right opportunities, and offering real-time guidance to improve success.",
+            "By combining data-driven intelligence with a user-friendly experience, we make sure that every applicant has a clearer path forward.",
+            "With JAICE, your job search isn't just about applying — it's about applying smarter, with purpose and confidence."].join(" ")
         ]}
         aside={
           <img
@@ -209,17 +212,20 @@ export function AboutPage() {
         id="impact"
         title="OUR IMPACT"
         copy={[
-          "At JAICE, we are building tools that redefine the way job seekers approach applications and career opportunities. Every feature is designed to empower users and simplify their journey."
+          ["At JAICE, we are building tools that redefine the way job seekers approach applications and career opportunities.",
+            "Every feature is designed to empower users and simplify their journey."].join(" ")
         ]}
         aside={
-          <img
-            src="/impact.png"
-            alt="Professional reviewing applications at a desk"
-            className="rounded-3xl shadow-xl object-cover w-full h-[280px] md:h-[360px]"
-          />
+            <img
+              src="/impact.png"
+              alt="Professional reviewing applications at a desk"
+              className="self-start ml-8 rounded-3xl shadow-xl w-auto h-auto max-h-[280px] md:max-h-[px] block object-contain"
+              loading="eager"
+              decoding="async"
+            />
         }
       >
-        <ul className="grid gap-4 md:grid-cols-2">
+        <ul className="grid gap-4">
           <li>
             <p className="font-semibold tracking-wide">SMART APPLICATION SORTING</p>
             <p className="opacity-90">

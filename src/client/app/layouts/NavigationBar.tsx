@@ -47,7 +47,7 @@ export function NavigationBar() {
   };
 
   return (
-    <div className="ml-[5rem] h-screen overflow-hidden">
+    <div className="ml-[5rem] h-screen overflow-x-hidden">
       <nav className="absolute left-0 h-screen">
         <div className="fixed z-100 group left-0 w-[5rem] hover:w-[15rem] h-full bg-[var(--color-blue-1)] flex flex-col items-center p-2 gap-2">
           {/* Title */}
