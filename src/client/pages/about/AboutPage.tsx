@@ -219,7 +219,7 @@ export function AboutPage() {
             <img
               src="/impact.png"
               alt="Professional reviewing applications at a desk"
-              className="self-start ml-8 rounded-3xl shadow-xl w-auto h-auto max-h-[280px] md:max-h-[px] block object-contain"
+              className="self-start ml-8 rounded-3xl shadow-xl w-auto h-auto max-h-[280px] md:max-h-[450px] block object-contain"
               loading="eager"
               decoding="async"
             />
