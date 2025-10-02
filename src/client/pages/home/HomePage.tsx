@@ -12,7 +12,7 @@ export function HomePage() {
   const [isMultiSelecting, setIsMultiSelecting] = useState(false);
   // State and filter options
   const [selectedOption, setSelectedOption] = useState("default");
-  const [isOpen, setIsOpen] = useState(false);
+  const [isMenuOpen, setMenuOpen] = useState(false);
   const options = [
     { value: "default", label: "Sort by" },
     { value: "new", label: "Newest First" },
@@ -23,7 +23,11 @@ export function HomePage() {
   //State for search
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  //State for alerts
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("No Alerts");
 
+  //Column Meta Data
   const columns = [
     { id: 1, title: "Applied", bg: "var(--color-light-purple)", count: 10 },
     { id: 2, title: "Interview", bg: "var(--color-teal)", count: 5 },
@@ -41,14 +45,17 @@ export function HomePage() {
           setIsMultiSelecting={setIsMultiSelecting}
           multiSelectLabel={isMultiSelecting ? "Multi Select" : ""}
           options={options}
-          isOpen={isOpen}
-          setIsOpen={setIsOpen}
+          isMenuOpen={isMenuOpen}
+          setMenuOpen={setMenuOpen}
           selectedOption={selectedOption}
           setSelectedOption={setSelectedOption}
           isSearching={isSearching}
           setIsSearching={setIsSearching}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
+          isAlertOpen={isAlertOpen}
+          setIsAlertOpen={setIsAlertOpen}
+          alertMessage={alertMessage}
         />
 
         {/* Kan Ban Columns */}

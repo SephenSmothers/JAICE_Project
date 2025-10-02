@@ -18,6 +18,7 @@ export function Column({ title, count, backgroundColor }: ColumnProps) {
     width: "100%",
     border: "1px solid #ccc",
     height: "fit-content",
+    minWidth: "15rem"
   };
 
   return (

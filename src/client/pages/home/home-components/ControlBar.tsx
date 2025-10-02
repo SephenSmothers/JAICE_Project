@@ -2,7 +2,7 @@ import { CheckBoxToggle } from "@/client/global-components/CheckBoxToggle";
 import { DropDownMenu } from "@/client/global-components/DropDownMenu";
 import { SearchBar } from "@/client/global-components/SearchBar";
 import filterIcon from "@/client/assets/icons/filter.svg";
-
+import { AlertBox } from "./AlertBox";
 
 /**
  * Control Bar Props
@@ -25,17 +25,20 @@ interface ControlBarProps {
   multiSelectLabel?: string;
 
   options: { value: string; label: string }[];
-  isOpen: boolean;
+  isMenuOpen: boolean;
   selectedOption: string;
-  setIsOpen: (value: boolean) => void;
+  setMenuOpen: (value: boolean) => void;
   setSelectedOption: (value: string) => void;
 
   isSearching: boolean;
   setIsSearching: (value: boolean) => void;
   searchQuery: string;
   setSearchQuery: (value: string) => void;
-}
 
+  isAlertOpen: boolean;
+  setIsAlertOpen: (value: boolean) => void;
+  alertMessage?: string;
+}
 
 /**
  * Control Bar Component
@@ -62,8 +65,8 @@ export function ControlBar({
   multiSelectLabel,
 
   options,
-  isOpen,
-  setIsOpen,
+  isMenuOpen,
+  setMenuOpen,
   selectedOption,
   setSelectedOption,
 
@@ -71,28 +74,42 @@ export function ControlBar({
   setIsSearching,
   searchQuery,
   setSearchQuery,
+
+  isAlertOpen,
+  setIsAlertOpen,
+  alertMessage,
 }: ControlBarProps) {
   return (
-    <div className="w-full h-[50px] flex items-center justify-end gap-4">
-      <SearchBar 
-        isSearching={isSearching}
-        setIsSearching={setIsSearching}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-      />
-      <DropDownMenu
-        options={options}
-        isOpen={isOpen}
-        selectedOption={selectedOption}
-        setIsOpen={setIsOpen}
-        setSelectedOption={setSelectedOption}
-        leftIcon={filterIcon}
-      />
-      <CheckBoxToggle
-        label={multiSelectLabel}
-        isChecked={isMultiSelecting}
-        setIsChecked={setIsMultiSelecting}
-      />
+    <div className="w-full h-[50px] flex items-center justify-between gap-4">
+      <div className="">
+        <AlertBox
+          isOpen={isAlertOpen}
+          setIsOpen={setIsAlertOpen}
+          alertMessage={alertMessage}
+        />
+      </div>
+
+      <div className="flex gap-4 justify-center items-center">
+        <SearchBar
+          isSearching={isSearching}
+          setIsSearching={setIsSearching}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+        />
+        <DropDownMenu
+          options={options}
+          isOpen={isMenuOpen}
+          selectedOption={selectedOption}
+          setIsOpen={setMenuOpen}
+          setSelectedOption={setSelectedOption}
+          leftIcon={filterIcon}
+        />
+        <CheckBoxToggle
+          label={multiSelectLabel}
+          isChecked={isMultiSelecting}
+          setIsChecked={setIsMultiSelecting}
+        />
+      </div>
     </div>
   );
 }
