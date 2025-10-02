@@ -56,18 +56,14 @@ export function NavigationBar() {
               className="text-xl font-bold"
               style={{ fontFamily: "var(--font-title)" }}
             >
-              <span
-                className="group-hover:hidden"
-                style={{ fontFamily: "inherit", fontSize: "inherit" }}
-              >
-                J
-              </span>
-              <span
-                className="hidden group-hover:inline"
-                style={{ fontFamily: "inherit", fontSize: "inherit" }}
-              >
-                JAICE
-              </span>
+                <div className="flex flex-col items-center gap-2">
+                      <img
+                        src="/JAICE_logo.png"
+                        alt="JAICE"
+                        className="w-17 h-17 group-hover:w-30 group-hover:h-30 flex-shrink-0 transition-all duration-200"
+                      />
+                      <span className="hidden group-hover:inline text-2xl">Simplify Your Job Hunt</span>
+                    </div>
             </h1>
           </header>
 
