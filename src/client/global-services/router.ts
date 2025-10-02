@@ -15,16 +15,17 @@ export const router = createBrowserRouter([
     element: LandingRoute.element,
   },
   {
+    path: AboutRoute.path,
+    element: AboutRoute.element,
+  },
+  {
     element: NavigationBarRoute.element,
     children: [
       {
         path: HomeRoute.path,
         element: HomeRoute.element,
       },
-      {
-        path: AboutRoute.path,
-        element: AboutRoute.element,
-      },
+
       {
         path: DashboardRoute.path,
         element: DashboardRoute.element,
@@ -41,7 +42,6 @@ export const router = createBrowserRouter([
         path: NotificationsRoute.path,
         element: NotificationsRoute.element,
       },
-
     ],
   },
 ]);
