@@ -8,6 +8,11 @@ import { ControlBar } from "./home-components/ControlBar";
 import { Column } from "./home-components/Column";
 
 export function HomePage() {
+  /*
+  Props are passed from the home page to the control bar so we can maintain central state.
+  This allows us to manage the state of multi-selection, filtering, searching, and alerts from one place.
+  Those changes are then passed back up to the home page and can be passed down to the columns as needed.
+  */
   // State for multi-selection
   const [isMultiSelecting, setIsMultiSelecting] = useState(false);
   // State and filter options
@@ -27,6 +32,17 @@ export function HomePage() {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [alertMessage, ] = useState("No Alerts");
 
+  //State for Info Modal
+  const [isInfoModalOpen, setInfoModalOpen] = useState(false);
+
+  /*
+  The column meta data will be moved into the meta file for the data when we get to that point.
+  Currently it's hard coded here for demonstration purposes. Eventually, we would recieve the data
+  as a prop from the meta file and provide that data directly to the column component here.
+
+  When we filter, search, or multi-select, we can either pass that up to the meta file to handle
+  or we can handle it here and just provide the filtered data to the columns for rendering components.
+  */
   //Column Meta Data
   const columns = [
     { id: 1, title: "Applied", bg: "var(--color-light-purple)", count: 10 },
@@ -56,8 +72,11 @@ export function HomePage() {
           isAlertOpen={isAlertOpen}
           setIsAlertOpen={setIsAlertOpen}
           alertMessage={alertMessage}
+          infoModalLabel={isInfoModalOpen ? "Info" : ""}
+          isInfoModalOpen={isInfoModalOpen}
+          setInfoModalOpen={setInfoModalOpen}
         />
-
+        {/* When we get to the point of dynamic data, we can provide the states directly to the column keeping the home page lean and clean */}
         {/* Kan Ban Columns */}
         <div className="flex gap-4 w-full">
           {columns.map((column) => (

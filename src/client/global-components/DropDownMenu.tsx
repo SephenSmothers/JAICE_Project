@@ -1,5 +1,6 @@
 import circleXIcon from "@/client/assets/icons/circle-xmark.svg";
-
+import { motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * Menu Selector Props
@@ -19,10 +20,9 @@ interface DropDownMenuProps {
   leftIcon: string;
 }
 
-
 /**
  * Drop Down Menu Component
- * 
+ *
  * Creates a dropdown menu for selecting options. Displays a left icon and handles open/close state on hover and selection
  * @param options - Array of option objects with value and label
  * @param isOpen - Boolean indicating if the menu is open
@@ -40,6 +40,23 @@ export function DropDownMenu({
   setSelectedOption,
   leftIcon,
 }: DropDownMenuProps) {
+  // Ref for the content to measure its width
+  const contentRef = useRef<HTMLDivElement>(null);
+  // State for target width
+  const [targetWidth, setTargetWidth] = useState(40);
+  // Update target width when isOpen or selectedOption changes
+  useEffect(() => {
+    if (!isOpen || !contentRef.current) {
+      setTargetWidth(40);
+      return;
+    }
+    // Use requestAnimationFrame to ensure DOM is updated before measuring
+    requestAnimationFrame(() => {
+      setTargetWidth(contentRef.current!.offsetWidth + 16);
+    });
+  }, [isOpen, selectedOption]);
+  
+  // Styles
   const menuStyle: React.CSSProperties = {
     color: "white",
     borderRadius: "0.5rem",
@@ -62,17 +79,20 @@ export function DropDownMenu({
   };
 
   return (
-    <div
-      className="flex justify-center items-center bg-transparent border p-2 rounded transition-all duration-300 ease-in-out cursor-pointer"
+    <motion.div
+      className="flex justify-start items-center bg-transparent border p-2 rounded cursor-pointer overflow-hidden"
       onMouseEnter={() => setIsOpen(true)}
       onMouseLeave={
         selectedOption === "default"
           ? () => setIsOpen(false)
           : () => setIsOpen(true)
       }
+      animate={{ width: targetWidth }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
     >
-      <div
+      <motion.div
         style={menuStyle}
+        ref={contentRef}
         className="gap-2 flex items-center justify-center"
       >
         <img
@@ -82,7 +102,12 @@ export function DropDownMenu({
           style={iconStyle}
         />
         {isOpen ? (
-          <div className="flex items-center gap-2">
+          <motion.div
+            className="flex items-center gap-2"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+          >
             <select
               style={menuStyle}
               value={selectedOption}
@@ -108,9 +133,9 @@ export function DropDownMenu({
                 onClick={() => setSelectedOption("default")}
               />
             ) : null}
-          </div>
+          </motion.div>
         ) : null}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
