@@ -156,7 +156,7 @@ button.selected
 /* page layout */
 html, body 
 {
-  background: linear-gradient(160deg, var(--color-blue-1), var(--color-blue-2), var(--color-blue-1));
+  background: var(--color-bg);
   margin: 0;
   display: flex;
   width: 100%;
