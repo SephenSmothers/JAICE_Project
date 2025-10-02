@@ -25,7 +25,7 @@ export function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   //State for alerts
   const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const [alertMessage, setAlertMessage] = useState("No Alerts");
+  const [alertMessage, ] = useState("No Alerts");
 
   //Column Meta Data
   const columns = [
