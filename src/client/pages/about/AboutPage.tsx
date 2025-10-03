@@ -4,6 +4,8 @@
 // import public from "/asset-filename.ext"
 
 import * as React from "react"
+import { useNavigate } from "react-router";
+import Button from "@/client/global-components/button";
 
 /* Reuseable section wrapper (title + opt. eyebrow + 2-column layout) */
 function Section({
@@ -142,10 +144,15 @@ function TeamGrid({
 }
 
 export function AboutPage() {
+  const navigate = useNavigate();
 
   return (
-    <div style={{background: "var(--color-bg-alt)"}} className="min-h-screen">
+    <div style={{ background: "var(--color-bg-alt)" }} className="min-h-screen">
       <main className="relative mx-auto max-w-7xl px-4 md:px-8 min-h-screen overflow-x-hidden">
+        {/* *Floating Button Container */}
+        <div className="fixed top-0 left-0 m-4">
+          <Button onClick={() => navigate("/")}>Home</Button> {/* This is a quick navigation to the Landing Page until Authentication Routing is fixed. */}
+        </div>
         {/* HERO / ABOUT */}
         <section className="relative w-full pt-14 md:pt-20">
           <div className="mx-auto max-w-none px-4 md:px-8 flex flex-wrap items-center justify-start gap-6 md:gap-10">
@@ -217,13 +224,13 @@ export function AboutPage() {
               "Every feature is designed to empower users and simplify their journey."].join(" ")
           ]}
           aside={
-              <img
-                src="/impact.png"
-                alt="Professional reviewing applications at a desk"
-                className="self-start ml-8 rounded-3xl shadow-xl w-auto h-auto max-h-[280px] md:max-h-[450px] block object-contain"
-                loading="eager"
-                decoding="async"
-              />
+            <img
+              src="/impact.png"
+              alt="Professional reviewing applications at a desk"
+              className="self-start ml-8 rounded-3xl shadow-xl w-auto h-auto max-h-[280px] md:max-h-[450px] block object-contain"
+              loading="eager"
+              decoding="async"
+            />
           }
         >
           <ul className="grid gap-4">
