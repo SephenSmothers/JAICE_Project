@@ -26,7 +26,7 @@ function Section({
   reverse?: boolean;
 }) {
   return (
-    <section id={id} className="py-6 md:py-10">
+    <section id={id} className="mx-auto max-w-7xl px-4 md:px-8 py-6 md:py-10">
       {(eyebrow || title) && (
         <header className="mb-8">
           {eyebrow && (
@@ -76,7 +76,7 @@ function TeamGrid({
         {title}
       </h2>
 
-      // TODO: Need to fix the callout lines to match the wireframe. Currently appears within the card per teammate.
+      {/* TODO: Need to fix the callout lines to match the wireframe. Currently appears within the card per teammate. */}
       <div className="grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-8">
         {people.map((p, index) => {
           const isActive = active === p.id;
@@ -227,7 +227,7 @@ export function AboutPage() {
             <img
               src="/impact.png"
               alt="Professional reviewing applications at a desk"
-              className="self-start ml-8 rounded-3xl shadow-xl w-auto h-auto max-h-[280px] md:max-h-[450px] block object-contain"
+              className="self-start w-full h-auto rounded-3xl shadow-xl max-h-[280px] md:max-h-[450px] object-fill"
               loading="eager"
               decoding="async"
             />
