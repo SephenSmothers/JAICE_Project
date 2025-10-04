@@ -61,6 +61,7 @@ export function InfoModal({ title, content, setIsOpen }: InfoModalProps) {
     flexDirection: "column",
     alignItems: "center",
     boxShadow: "0 0 5px rgba(255, 255, 255, 0.3)",
+    zIndex: 90,
   };
 
   return (
