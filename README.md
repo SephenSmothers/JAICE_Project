@@ -64,7 +64,7 @@ npm run build
 ```
 ```
 # Deployment testing
-npm run start
+npm run preview
 ```
 
 The project has been set up with tailwindcss added.
