@@ -181,5 +181,3 @@ JAICE_PROJECT/
 - ⬜ Calendar integration (interviews)
 - ⬜ Recruiter information extraction
 
-Running the project:
-
