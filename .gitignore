@@ -28,3 +28,14 @@ dist-ssr
 .env.local
 .env.*.local
 src/server/.env
+
+# python
+sec/server/.venv/
+src/server/.env
+src/server/__pycache__/
+src/server/*.pyc
+src/server/auth/__pycache__/
+src/server/auth/*.pyc
+src/server/credentials.json
+src/server/deps/__pycache__/
+src/server/deps/*.pyc

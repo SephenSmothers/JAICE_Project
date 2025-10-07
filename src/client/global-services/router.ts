@@ -10,7 +10,8 @@ import { AccountRoute } from "@/client/pages/settings/account/account.meta";
 import { AccessibilityRoute } from "@/client/pages/settings/accessibility/accessibility.meta";
 import { NotificationsRoute } from "@/client/pages/settings/notifications/notification.meta";
 
-// Guard Loader (runs on client-side navigation)
+// Loader that ensures the user is authenticated before accessing the protected routes
+// If not authenticated, it redirects to the Landing page
 async function requireAuth() {
   const user = await waitForAuth();
   if (!user) {
@@ -20,6 +21,8 @@ async function requireAuth() {
   return user;
 }
 
+// All routes with 'loade: requireAuth' are protected and require authentication
+// Public routes (no authentication required) do not have this loader
 export const router = createBrowserRouter([
   {
     path: LandingRoute.path,
