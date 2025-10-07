@@ -2,10 +2,13 @@ import { auth } from "./firebase";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
 import type { User } from "firebase/auth";
 
+// Sign up a new user with email and password
 export const signUp = (email: string, password: string) => createUserWithEmailAndPassword(auth, email, password);
 
+// Sign in an existing user with email and password
 export const signIn = (email: string, password: string) => signInWithEmailAndPassword(auth, email, password);
 
+// Sign out the current user
 export const logout = () => signOut(auth);
 
 // Observe auth state changes
