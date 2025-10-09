@@ -15,6 +15,7 @@ import accountIcon from "@/client/assets/icons/user.svg";
 import accessibilityIcon from "@/client/assets/icons/hand-paper.svg";
 import notificationIcon from "@/client/assets/icons/bell-notification-social-media.svg";
 import quitIcon from "@/client/assets/icons/user-logout.svg";
+import searchIcon from "@/client/assets/icons/search.svg";
 
 export function NavigationBar() {
   const navigate = useNavigate();
@@ -47,9 +48,9 @@ export function NavigationBar() {
   };
 
   return (
-    <div className="ml-[5rem] h-screen overflow-x-hidden">
+    <div className="ml-[5rem] h-screen overflow-x-hidden"> 
       <nav className="absolute left-0 h-screen">
-        <div className="fixed z-100 group left-0 w-[5rem] hover:w-[15rem] h-full bg-[var(--color-blue-1)] flex flex-col items-center p-2 gap-2">
+        <div className="fixed z-100 group left-0 w-[5rem] hover:w-[15rem] h-full bg-[var(--color-blue-1)] flex flex-col items-center p-2 gap-2 shadow-md">
           {/* Title */}
           <header>
             <h1
@@ -238,6 +239,49 @@ export function NavigationBar() {
           </div>
         </div>
       </nav>
+      
+      {/* Header */}
+      <header className="p-7 bg-[var(--color-blue-1)] shadow-md">
+        <div className="flex items-start justify-between">
+
+          {/* account picture and name */}
+          <div className="flex items-center gap-3 ml-[10rem]">
+
+            {/* picture placeholder */}
+            <div  className="w-30 h-30 rounded-full bg-gray-600"></div>
+
+              {/* name placeholder */}
+            <div className="flex flex-col text-white ">
+              <h2 className="text-2xl text-left">Michael Gary Scott</h2>
+              <h3 className="text-lg text-gray-300 text-left">paper@example.com</h3>
+              <h3 className="text-lg text-gray-300 text-left">Fresh Starter</h3>
+
+            </div>
+          </div>
+
+          {/*search bar */}
+          <div className="flex items-start mr-6">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search..."
+                className="px-4 py-2 pl-10 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-96"
+              />
+
+              {/* search icon inside the input field */}
+              <img
+                src={searchIcon}
+                alt="Search"
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
+
+                // changes the color of  the icon
+                style={{ filter: 'brightness(0) saturate(100%) invert(60%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(70%) contrast(90%)' }}   
+              />
+            </div>
+          </div>
+        </div>
+
+      </header>
       <Outlet />
     </div>
   );
