@@ -1,3 +1,4 @@
+import { transform } from "framer-motion";
 import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -22,13 +23,28 @@ export function FloatingInputField({
   const [isFocused, setIsFocused] = useState(false);
 
   // State to track tooltip position
-  const [coords, setCoords] = useState({ left: 0, top: 0 });
+  const [coords, setCoords] = useState({ left: 0, top: 0, right: 0, bottom: 0 });
 
   // Ref to the input element to get its position
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Generate a unique ID for the input based on the label
   const inputID = label.toLowerCase().replace(/\s+/g, "-");
+
+  // Check if the screen is small (for responsive design, if needed)
+  const isSmall = window.innerWidth < 768;
+
+  const toolTipStyle = isSmall
+    ? {
+        left: coords.left,
+        top: coords.bottom + 8,
+        transform: "translateX(-50%)",
+      }
+      : {
+        left: coords.left,
+        top: coords.top,
+        transform: "translate(-105%, -20%)",
+      };
 
   // Determine if we should show the error modal
   const showModal = errorTitle && errorMessage;
@@ -49,10 +65,18 @@ export function FloatingInputField({
   const setFocus = () => {
     if (!inputRef.current) return;
     const rect = inputRef.current.getBoundingClientRect();
-    setCoords({
+    setCoords( isSmall ? {
       left: rect.left + rect.width / 2,
-      top: rect.top - 8,
+      top: rect.bottom + 8,
+      right: rect.right,
+      bottom: rect.bottom + 8,
+    } : {
+      left: rect.left,
+      top: rect.top,
+      right: rect.left + 8,
+      bottom: 0,
     });
+
     setIsFocused(true);
   };
 
@@ -128,19 +152,11 @@ export function FloatingInputField({
         isFocused &&
         createPortal(
           <div
-            className="backdrop-blur-xl z-50 bg-black/60"
-            style={{
-              position: "absolute",
-              top: coords.top,
-              left: coords.left,
-              transform: "translateX(-50%) translateY(-100%)",
-              border: "1px solid var(--color-red-500)",
-              borderRadius: "0.5rem",
-              padding: "0.5rem",
-            }}
+            className="fixed border border-white/20 rounded-xl p-4 backdrop-blur-xl z-50 bg-black/60"
+            style={{ ...toolTipStyle }}
             role="tooltip"
           >
-            <p>{errorTitle}</p>
+            <p className="font-bold w-full text-center">{errorTitle}</p>
             <p>{errorMessage}</p>
           </div>,
           document.body
