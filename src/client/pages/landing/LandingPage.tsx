@@ -11,13 +11,17 @@ export function LandingPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="flex flex-col gap-10 min-h-screen p-[2rem] md:flex-row overflow-auto"
-      style={{background: "var(--color-bg-alt)"}}>
+    <div
+      className="flex flex-col gap-10 min-h-screen p-[2rem] md:flex-row overflow-auto"
+      style={{ background: "var(--color-bg-alt)" }}
+    >
       {/* *Top Container */}
       <div className="flex w-full px-[2rem] py-[4rem] items-center justify-center">
         {/* Inner Container */}
         <div className="flex flex-col items-center gap-5 p-8 justify-center">
-          <img src="/JAICE_logo.png" className="w-120 h-120 mx-auto" />
+          <div className="w-120 h-120">
+            <img src="/JAICE_logo.png" className="fit-cover" />
+          </div>
           <div className="text-left">
             <h1>Job Application Intelligence</h1>
             <h1>& Career Enhancement</h1>
