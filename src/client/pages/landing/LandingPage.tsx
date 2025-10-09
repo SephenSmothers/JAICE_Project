@@ -3,35 +3,45 @@
 // import localComponents from "./landing-components/"
 // import public from "/asset-filename.ext"
 
-import { useState } from 'react'
-import reactLogo from '@/client/assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useNavigate } from "react-router";
+import { LandingForm } from "./landing-components/LandingForm";
+import Button from "@/client/global-components/button";
 
-export default function LandingPage() {
-  const [count, setCount] = useState(0)
+export function LandingPage() {
+  const navigate = useNavigate();
 
   return (
-    <>
-      <div className="flex justify-center gap-4 mb-4">
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div
+      className="flex flex-col gap-10 min-h-screen p-[2rem] md:flex-row overflow-auto"
+      style={{ background: "var(--color-bg-alt)" }}
+    >
+      {/* *Top Container */}
+      <div className="flex w-full px-[2rem] py-[4rem] items-center justify-center">
+        {/* Inner Container */}
+        <div className="flex flex-col items-center gap-5 p-8 justify-center">
+          <div className="w-120 h-120">
+            <img src="/JAICE_logo.png" className="fit-cover" />
+          </div>
+          <div className="text-left">
+            <h1>Job Application Intelligence</h1>
+            <h1>& Career Enhancement</h1>
+          </div>
+          <h2>Simplify Your Job Hunt</h2>
+        </div>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p className="text-2xl text-green-500">
-          This line is testing tailwinds import and usage.
-        </p>
+
+      {/* *Form Container */}
+      <div className="flex w-full  px-[2rem] py-[4rem] items-center justify-center">
+        {/* Inner Container */}
+        <div className="flex flex-col w-[30rem]">
+          <LandingForm />
+        </div>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+
+      {/* *Floating Button Container */}
+      <div className="fixed top-0 left-0 m-4">
+        <Button onClick={() => navigate("/about")}>About</Button>
+      </div>
+    </div>
+  );
 }
