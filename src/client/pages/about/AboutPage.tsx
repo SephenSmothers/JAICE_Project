@@ -154,7 +154,7 @@ export function AboutPage() {
           <Button onClick={() => navigate("/")}>Home</Button> {/* This is a quick navigation to the Landing Page until Authentication Routing is fixed. */}
         </div>
         {/* HERO / ABOUT */}
-        <section className="relative w-full pt-14 md:pt-20">
+        <section className="relative w-full mt-14 md:pt-20">
           <div className="mx-auto max-w-none px-4 md:px-8 flex flex-wrap items-center justify-start gap-6 md:gap-10">
             <h1
               className="font-extrabold leading-none tracking-tight whitespace-nowrap"
