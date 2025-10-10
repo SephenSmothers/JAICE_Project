@@ -241,7 +241,7 @@ export function NavigationBar() {
       </nav>
       
       {/* Header */}
-      <header className="p-7 bg-[var(--color-blue-1)] shadow-md">
+      <header className="p-7 bg-[var(--color-blue-1)] shadow-md sticky top-0 z-10">
         <div className="flex items-start justify-between">
 
           {/* account picture and name */}
@@ -282,7 +282,9 @@ export function NavigationBar() {
         </div>
 
       </header>
-      <Outlet />
+      <div className="overflow-x-auto">
+        <Outlet />
+      </div>
     </div>
   );
 }
