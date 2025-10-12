@@ -2,10 +2,52 @@
 // import globalComponents from "@/client/global-components/"
 // import localComponents from "./account-components/"
 // import public from "/asset-filename.ext"
+import { auth} from "../../../global-services/firebase";
 import Button from "@/client/global-components/button";
+import { deleteCurrentUser } from "@/client/global-services/auth";
+import { useState } from "react";
+
 
 export function AccountPage() 
 {
+const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleDelete() {
+    setError(null);
+    const sure = window.confirm(
+      "This will permanently delete your account. This cannot be undone. Continue?"
+    );
+    if (!sure) return;
+
+    setBusy(true);
+    const res = await deleteCurrentUser(); // if you support email/password reauth, pass { email, password } here
+    setBusy(false);
+
+    if (res.ok) {
+      // Account deleted; user will be signed out. Send them to your Landing page.
+      window.location.assign("/");
+      return;
+    }
+
+    if (res.code === "reauth-needed" || res.code === "auth/requires-recent-login") {
+      setError("Please re-authenticate and try again.");
+      // If you support email/password, collect the current password and retry:
+       const email = auth.currentUser?.email?.toString();
+       const password = prompt("Confirm your current password to continue:") || "";
+       if (password) {
+         setBusy(true);
+         const retry = await deleteCurrentUser({ email, password });
+         setBusy(false);
+         if (retry.ok) { window.location.assign("/"); return; }
+         setError(`Failed to delete account: ${retry.code}`);
+       }
+      return;
+    }
+
+    setError(`Failed to delete account: ${res.code}`);
+  }
+
   return (
     <div className="w-full h-full bg-slate-950 text-slate-100"
       style={{background: "var(--color-bg)"}}>
@@ -153,14 +195,21 @@ export function AccountPage()
               </div>
             </div>
 
-            {/* delete account */}
+                 {/* delete account */}
             <div className="my-6 text-left">
               <button
-                onClick={() => console.log("Delete Account clicked")}
+                onClick={handleDelete}
+                disabled={busy}
+                aria-busy={busy}
                 className="red"
               >
-                Delete Account
+                {busy ? "Deleting..." : "Delete Account"}
               </button>
+              {error && (
+                <p className="mt-2 text-sm text-red-400" role="alert">
+                  {error}
+                </p>
+              )}
             </div>
 
           </div>
