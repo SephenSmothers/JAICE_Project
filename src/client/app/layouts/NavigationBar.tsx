@@ -6,6 +6,7 @@
 import Button from "@/client/global-components/button";
 import { Outlet, useLocation, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
+import {auth} from "../../global-services/firebase"
 
 // Icons
 import homeIcon from "@/client/assets/icons/home.svg";
@@ -46,6 +47,22 @@ export function NavigationBar() {
     setSelectedButton(buttonId);
     navigate(route);
   };
+
+  function usernameFromEmail(email?: string | null) {
+  if (!email) return "";
+  const local = email.split("@")[0];       // before @
+  const noTag = local.split("+")[0];       // drop +anything
+  // turn dots/underscores into spaces and Title Case it
+  return noTag
+    .replace(/[._-]+/g, " ")
+    .trim()
+    .replace(/\b\w/g, c => c.toUpperCase());
+}
+
+const HeaderUserName = usernameFromEmail(auth.currentUser?.email);
+const HeaderEmail = auth.currentUser?.email?.toString();
+
+
 
   return (
     <div className="ml-[5rem] h-screen overflow-x-hidden"> 
@@ -252,8 +269,8 @@ export function NavigationBar() {
 
               {/* name placeholder */}
             <div className="flex flex-col text-white ">
-              <h2 className="text-2xl text-left">Michael Gary Scott</h2>
-              <h3 className="text-lg text-gray-300 text-left">paper@example.com</h3>
+              <h2 className="text-2xl text-left">{HeaderUserName}</h2>
+              <h3 className="text-lg text-gray-300 text-left">{HeaderEmail}</h3>
               <h3 className="text-lg text-gray-300 text-left">Fresh Starter</h3>
 
             </div>
