@@ -30,7 +30,7 @@ dist-ssr
 src/server/.env
 
 # python
-sec/server/.venv/
+src/server/.venv/
 src/server/.env
 src/server/__pycache__/
 src/server/*.pyc
