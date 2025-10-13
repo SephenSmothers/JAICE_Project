@@ -30,7 +30,7 @@ export function NavigationBar() {
 
     if (path === "/home") {
       setSelectedButton("home");
-    } else if (path === "/about") {
+    } else if (path === "/auth-about") {
       setSelectedButton("about");
     } else if (path === "/dashboard") {
       setSelectedButton("dashboard");
@@ -114,7 +114,7 @@ const HeaderEmail = auth.currentUser?.email?.toString();
 
                 <li>
                   <Button
-                    onClick={() => handleButtonClick("/about", "about")}
+                    onClick={() => handleButtonClick("/auth-about", "about")}
                     isSelected={selectedButton === "about"}
                   >
                     <div className="flex items-center gap-2">
