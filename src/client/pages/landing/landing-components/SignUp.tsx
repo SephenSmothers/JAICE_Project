@@ -8,6 +8,8 @@ import {
 } from "@/client/global-services/input-validation";
 import { CreateNewAccount, LogUserIn } from "../landing.api";
 
+import { getAuth, fetchSignInMethodsForEmail } from "firebase/auth";
+
 export function SignUp() {
   const navigate = useNavigate();
 
@@ -24,8 +26,68 @@ export function SignUp() {
   const [validConfirmPassword, setValidConfirmPassword] = useState<
     boolean | null
   >(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   // The following function handles form submission
+  
+
+  // The following functions handle real-time input and validation
+  const handleEmailInput = async (value: string) => {
+    setEmail(value);
+
+    setEmailError(null); // Clear email error when user modifies input
+
+    const isEmailFormatValid = validateEmail(value) && value !== "";
+
+    if(!isEmailFormatValid)
+    {
+      setValidEmail(false);
+      setEmailError("Please enter a valid email address.");
+      return;
+    }
+
+    // check if emails already exists
+    try {
+      // gets firebase auth instance
+      const auth = getAuth();
+      // checks if email is already registered
+      const signInMethods = await fetchSignInMethodsForEmail(auth, value);
+
+      if (signInMethods.length > 0) 
+      {
+        // Email IS already registered
+        setValidEmail(false);
+        setEmailError("Email already in use. Please use a different email.");
+      } else {
+        // Email is NOT registered
+        setValidEmail(true);
+        setEmailError(null);
+      }
+
+    } catch (error) {
+      // If firebase check fails for some reason. Assume email is valid to not block user.
+      console.error("Error checking email existence:", error);
+
+      setValidEmail(true);
+      setEmailError(null);
+    }
+  };
+
+  const handleConfirmEmailInput = (value: string) => {
+    setConfirmEmail(value);
+    setValidConfirmEmail(value === email && value !== "");
+  };
+
+  const handlePasswordInput = (value: string) => {
+    setPassword(value);
+    setValidPassword(validatePassword(value) && value !== "");
+  };
+
+  const handleConfirmPasswordInput = (value: string) => {
+    setConfirmPassword(value);
+    setValidConfirmPassword(value === password && value !== "");
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     // Prevent default form submission behavior
     event.preventDefault();
@@ -40,6 +102,10 @@ export function SignUp() {
 
       if (!validEmail) {
         setValidEmail(false);
+        if(!emailError)
+        {
+          setEmailError("Please enter a valid email address.");
+        }
         console.log("Email is not valid");
       }
 
@@ -71,38 +137,28 @@ export function SignUp() {
 
     // If account creation fails, log the error message
     // If it succeeds, log in the user
-    if (!accountCreated) {
+    if (!accountCreated) 
+    {
       console.log("Account creation failed:", accountMessage);
+
+      // check if the email is already in use
+      if(accountMessage?.includes("email-already-in-use")) 
+      {
+        setValidEmail(false);
+        setEmailError("Email address is already in use.");
+      }
+      // for other errors
+      else
+      {
+        setValidEmail(false);
+        setEmailError("Failed to create account. Please try again later.");
+      }
       return;
-    } else {
-      console.log(
-        "Account created successfully proceeding to login:",
-        accountMessage
-      );
-
-      await LogUserIn({ navigate, email, password });
     }
-  };
 
-  // The following functions handle real-time input and validation
-  const handleEmailInput = (value: string) => {
-    setEmail(value);
-    setValidEmail(validateEmail(value) && value !== "");
-  };
-
-  const handleConfirmEmailInput = (value: string) => {
-    setConfirmEmail(value);
-    setValidConfirmEmail(value === email && value !== "");
-  };
-
-  const handlePasswordInput = (value: string) => {
-    setPassword(value);
-    setValidPassword(validatePassword(value) && value !== "");
-  };
-
-  const handleConfirmPasswordInput = (value: string) => {
-    setConfirmPassword(value);
-    setValidConfirmPassword(value === password && value !== "");
+    // account created successfull
+    console.log("Account created, logging in user");
+    await LogUserIn({ navigate, email, password });
   };
 
   return (
@@ -115,7 +171,7 @@ export function SignUp() {
           isValid={validEmail}
           action={handleEmailInput}
           errorTitle="Invalid Email"
-          errorMessage="Please enter a valid email address."
+          errorMessage={emailError || "Please enter a valid email address."}
         />
         <FloatingInputField
           label="Confirm Email"
@@ -133,7 +189,7 @@ export function SignUp() {
           value={password}
           isValid={validPassword}
           action={handlePasswordInput}
-          errorTitle="Minimumm Requirements Not Met"
+          errorTitle="Minimum Requirements Not Met"
           errorMessage="8 Characters, 1 Number, 1 Special"
         />
         <FloatingInputField
