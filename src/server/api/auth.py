@@ -1,9 +1,10 @@
 import os, jwt
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import JSONResponse
-
-from deps.auth import get_current_user
+from fastapi.responses import JSONResponse, RedirectResponse
+from google_auth_oauthlib.flow import Flow
+from pathlib import Path
+from deps.auth import get_current_user, get_user_from_token_query
 from utils.security import encrypt_token
 
 from utils.logger import get_logger
@@ -12,10 +13,100 @@ logging = get_logger()
 # Create a new router object
 router = APIRouter()
 
-FRONTEND_DASHBOARD_URL = "http://localhost:5173/home"
-JWT_ALGORITHM = "HS256"
-BACKGROUND_DURATION_DAYS=365 # 1 year validity for backend JWT
+FRONTEND_DASHBOARD_URL = os.getenv("FRONTEND_DASHBOARD_URL")
+JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
+BACKGROUND_DURATION_DAYS=int(os.getenv("BACKGROUND_DURATION_DAYS"))
+SCOPES = os.getenv("PERMISSIONS_SCOPES").strip("[]").replace('"', '').split(",")
+REDIRECT_URI = os.getenv("REDIRECT_URI")
+CLIENT_SECRETS_FILE = Path(__file__).resolve().parent.parent / os.getenv("CLIENT_FILE_NAME")
 
+@router.get(
+  "/consent",
+  summary="Generates the Google OAuth2 consent screen URL."
+)
+def get_oauth_consent_url(
+  user: dict = Depends(get_user_from_token_query)
+):
+  uid = user.get("uid")
+  logging.info(f"Generating OAuth2 consent URL for user: {uid}")
+  
+  flow = Flow.from_client_secrets_file(
+      CLIENT_SECRETS_FILE,
+      scopes=SCOPES,
+      redirect_uri=REDIRECT_URI
+  )
+  
+  auth_url, state = flow.authorization_url(
+    access_type='offline',
+    state=uid
+  )
+  logging.debug(f"OAuth2 consent URL generated: {auth_url}")
+  return RedirectResponse(auth_url)
+
+
+@router.get("/google/callback",
+    summary="Handles the OAuth 2.0 callback from Google."
+)
+async def oauth_callback(request: Request, code: str, state: str):
+    """
+    Exchanges the authorization code for a refresh token and updates the user's
+    record in the database.
+    """
+    uid = state 
+    logging.info(f"Received OAuth callback for user: {uid}")
+    
+    flow = Flow.from_client_secrets_file(
+        CLIENT_SECRETS_FILE,
+        scopes=SCOPES,
+        redirect_uri=REDIRECT_URI
+    )
+    
+    try:
+        flow.fetch_token(code=code)
+        credentials = flow.credentials
+        refresh_token = credentials.refresh_token
+        
+        if not refresh_token:
+            logging.error(f"Refresh token not received for user: {uid}. User may have denied offline access.")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Refresh token was not provided by Google. Please ensure you grant offline access."
+            )
+            
+    except Exception as e:
+        logging.error(f"Error fetching token from Google for user {uid}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to exchange authorization code with Google."
+        )
+
+    logging.info(f"Successfully received refresh token for user: {uid}. Updating database.")
+    encrypted_refresh_token = encrypt_token(refresh_token)
+    pool = request.app.state.pool
+    
+    try:
+        async with pool.acquire() as conn:
+            await conn.execute(
+                """
+                UPDATE user_account 
+                SET 
+                    google_refresh_token = $1, 
+                    email_parser_status = 'Connected'
+                WHERE user_id = $2
+                """,
+                encrypted_refresh_token,
+                uid
+            )
+        logging.info(f"Database successfully updated for user: {uid}")
+    except Exception as e:
+        logging.error(f"DB WRITE ERROR during OAuth callback for user {uid}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error while storing refresh token."
+        )
+
+    return RedirectResponse(FRONTEND_DASHBOARD_URL)
+  
 def phase_1_mint_jwt(uid: str) -> str:
   logging.info(f"Minting RLS JWT for user: {uid}")
   supabase_secret = os.getenv("SUPABASE_JWT_SECRET")
@@ -65,12 +156,7 @@ async def phase_2_store_and_respond(
                 user_email
             )
             VALUES ($1, $2, $3, 'Needs Permission', $4)
-            ON CONFLICT (user_id) DO UPDATE SET
-                google_refresh_token = EXCLUDED.google_refresh_token,
-                backend_rls_jwt = EXCLUDED.backend_rls_jwt,
-                email_parser_status = 'Needs Permission',
-                user_email = EXCLUDED.user_email,
-                updated_at = NOW()
+            ON CONFLICT (user_id) DO NOTHING
             """,
             uid, 
             encrypted_refresh_token, 
@@ -112,7 +198,7 @@ async def setup_rls_session(
         detail=f"Critical system error during JWT minting: {e}"
     )
 
-  DUMMY_REFRESH_TOKEN = "NO_GMAIL_TOKEN_GRANTED" # Placeholder that gets updated on email parsing consent
+  DUMMY_REFRESH_TOKEN = "NO_GMAIL_TOKEN_GRANTED"
   try:
     logging.debug("Storing tokens and responding to client...")
     return await phase_2_store_and_respond(
@@ -129,6 +215,43 @@ async def setup_rls_session(
         detail=f"Critical system error during session setup: {e}"
     )
 
+@router.get("/status",
+    summary="Gets the current user's email parser status from the database."
+)
+async def is_email_parser_enabled(
+    request: Request,
+    user: dict = Depends(get_current_user)
+):
+  uid = user.get("uid")
+  pool = request.app.state.pool
+  
+  logging.info(f"Fetching email_parser_status for user: {uid}")
+  
+  try:
+    async with pool.acquire() as conn:
+      record = await conn.fetchrow(
+          "SELECT email_parser_status FROM user_account WHERE user_id = $1",
+          uid
+      )
+      
+      if record is None:
+          logging.error(f"CRITICAL: User row not found for UID: {uid}. The initial setup may have failed.")
+          raise HTTPException(
+              status_code=status.HTTP_404_NOT_FOUND,
+              detail="User record not found. Please log out and log in again."
+          )
+      logging.info(f"Email parser status for user {uid}: {record['email_parser_status']}")
+      return {"status": record['email_parser_status']}
+
+  except HTTPException as e:
+    raise e
+  except Exception as e:
+    logging.error(f"DB READ ERROR for user {uid}: {e}")
+    raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail="A database error occurred while fetching user status."
+    )
+    
 # Protected endpoint to get current user info
 # The path here is relative to the prefix in main.py
 @router.get("/me")
