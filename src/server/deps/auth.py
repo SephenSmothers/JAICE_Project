@@ -2,6 +2,9 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from services.firebase_admin import verify_id_token
 
+from utils.logger import get_logger
+logging = get_logger()
+
 # Security scheme for HTTP Bearer authentication
 bearer = HTTPBearer(auto_error=False)
 
@@ -18,4 +21,13 @@ async def get_current_user(creds: HTTPAuthorizationCredentials = Depends(bearer)
     except Exception:
         # If verification fails, raise a 401 Unauthorized error
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid/expired token")
-    
+
+async def get_user_from_token_query(token: str):
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing token")
+    try:
+        decoded = verify_id_token(token)
+        return decoded
+    except Exception:
+        logging.error("Token verification failed in query param")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid/expired token")

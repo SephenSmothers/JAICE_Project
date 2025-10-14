@@ -39,3 +39,5 @@ src/server/auth/*.pyc
 src/server/credentials.json
 src/server/deps/__pycache__/
 src/server/deps/*.pyc
+
+client_secrets.json
