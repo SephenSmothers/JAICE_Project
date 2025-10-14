@@ -1,6 +1,6 @@
 import { emailSignIn, emailSignUp, googleSignIn } from "@/client/global-services/auth";
 import type { NavigateFunction } from "react-router";
-
+import { api } from "@/client/global-services/api";
 // Return shape used components: [ok, message?]
 type ApiResponse = [boolean, string?];
 
@@ -12,6 +12,7 @@ export async function CreateNewAccount({email, password}: {email: string, passwo
   // takes the email and password, and creates a new account.
   try {
     await emailSignUp(email, password);
+    await api("/api/auth/setup-rls-session", { method: "POST" });
     return [true, "Account created successfully"];
   } catch (error: any) {
     return [false, error?.message ?? "Account creation failed"];
@@ -29,6 +30,7 @@ export async function LogUserIn({
 }): Promise<ApiResponse> {
   try {
     await emailSignIn(email, password);
+    await api("/api/auth/setup-rls-session", { method: 'POST' });
     navigate("/home");
     return [true, "Login successful"];
   } catch (error: any) {
@@ -42,6 +44,7 @@ export async function thirdPartyLogIn(provider: "Google" | "Outlook"): Promise<A
   try {
     if (provider === "Google") {
       await googleSignIn();
+      await api("/api/auth/setup-rls-session", { method: 'POST' });
       return [true, "Google log in successful"];
     } else {
       // Placeholder for Outlook sign-in method
