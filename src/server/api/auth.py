@@ -91,7 +91,8 @@ async def oauth_callback(request: Request, code: str, state: str):
                 UPDATE user_account 
                 SET 
                     google_refresh_token = $1, 
-                    email_parser_status = 'Connected'
+                    gmail_connected = True,
+                    gmail_connected_at = NOW()
                 WHERE user_id = $2
                 """,
                 encrypted_refresh_token,
@@ -150,18 +151,15 @@ async def phase_2_store_and_respond(
             """
             INSERT INTO user_account (
                 user_id, 
-                google_refresh_token, 
-                backend_rls_jwt, 
-                email_parser_status,
-                user_email
+                user_email, 
+                backend_rls_jwt
             )
-            VALUES ($1, $2, $3, 'Needs Permission', $4)
+            VALUES ($1, $2, $3)
             ON CONFLICT (user_id) DO NOTHING
             """,
             uid, 
-            encrypted_refresh_token, 
-            backend_jwt,
-            user_email
+            user_email,
+            backend_jwt
         )
         logging.info(f"Successfully stored RLS JWT and refresh token for user: {uid}")
   except Exception as e:
@@ -215,22 +213,22 @@ async def setup_rls_session(
         detail=f"Critical system error during session setup: {e}"
     )
 
-@router.get("/status",
-    summary="Gets the current user's email parser status from the database."
+@router.get("/gmail-consent-status",
+    summary="Gets the current user's gmail consent status from the database."
 )
-async def is_email_parser_enabled(
+async def is_gmail_consent_provided(
     request: Request,
     user: dict = Depends(get_current_user)
 ):
   uid = user.get("uid")
   pool = request.app.state.pool
   
-  logging.info(f"Fetching email_parser_status for user: {uid}")
+  logging.info(f"Fetching gmail status for user: {uid}")
   
   try:
     async with pool.acquire() as conn:
       record = await conn.fetchrow(
-          "SELECT email_parser_status FROM user_account WHERE user_id = $1",
+          "SELECT gmail_connected FROM user_account WHERE user_id = $1",
           uid
       )
       
@@ -240,8 +238,9 @@ async def is_email_parser_enabled(
               status_code=status.HTTP_404_NOT_FOUND,
               detail="User record not found. Please log out and log in again."
           )
-      logging.info(f"Email parser status for user {uid}: {record['email_parser_status']}")
-      return {"status": record['email_parser_status']}
+      is_connected = record['gmail_connected']
+      logging.info(f"Gmail connection status for user {uid}: {is_connected}")
+      return {"isConnected": is_connected}
 
   except HTTPException as e:
     raise e
