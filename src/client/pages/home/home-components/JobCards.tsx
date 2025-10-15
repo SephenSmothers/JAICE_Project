@@ -8,6 +8,7 @@ export type JobCardType = {
   id: string;
   title: string;
   column: string;
+  date?: string;
 };
 
 export function JobCard({
@@ -118,8 +119,13 @@ export function JobCard({
             ) : null}
           </AnimatePresence>
 
-          {/* Job Title */}
-          <p>{job.title}</p>
+          {/* Job Title and date*/}
+          <div className="flex flex-col flex-1 min-w-0">
+            <p className="truncate">{job.title}</p>
+            {job.date && (
+              <small className="text-gray-400 opacity-75">{job.date}</small>
+            )}
+          </div>
 
         </motion.div>
 
