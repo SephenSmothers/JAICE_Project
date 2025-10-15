@@ -9,11 +9,11 @@ type ApiResponse = [boolean, string?];
 // gains consent and updates the db accordingly
 async function connectGmailEmailAPIIfNeeded() {
   // we could use this swait status to display if users need to link email
-  const response = await api("/api/auth/status");
-  if (response.status == "Connected") {
-    console.log("Gmail parser status: Established");
+  const response = await api("/api/auth/gmail-consent-status");
+  if (response.isConnected) {
+    console.log("Gmail consent status: Established");
   } else {
-    console.log("Gmail parser status: Not established");
+    console.log("Gmail consent status: Not established");
     const token = await getIdToken()
     window.location.href = `http://localhost:8000/api/auth/consent?token=${token}`;
   }
