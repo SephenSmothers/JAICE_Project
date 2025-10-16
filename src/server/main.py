@@ -1,10 +1,12 @@
-from fastapi import FastAPI, HTTPException, status
+from typing import Optional
+from fastapi import FastAPI, HTTPException, status, Header
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from services.firebase_admin import initialize_firebase_sdk, check_firebase_auth_health
 from api.auth import router as auth_router
 from services.supabase_client import check_db_pool_status, connect_to_db, close_db_connection
+import httpx
 
 from utils.logger import get_logger
 logging = get_logger()
@@ -56,6 +58,72 @@ app.add_middleware(
 # Use the imported router instance
 # All routes will get listed here for the backend services
 app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
+
+# gmail API endpoints
+@app.get("/gmail/messages", tags=["Gmail"], summary="Get Gmail Messages")
+async def get_gmail_messages(
+    max_results: int = 10, # how many emails to fetch
+    authorization: Optional[str] = Header(None) # extract Authorization header
+):
+    """Fetch Gmail messages from the users inbox."""
+    if not authorization or  not authorization.startswith("Bearer "):
+        logging.error("No valid authorization header provided")
+        raise HTTPException(status_code=401, detail="No valid Authorization header provided.")
+
+    access_token = authorization.replace("Bearer ", "")
+    logging.info(f"Access token received (first 50 chars): {access_token[:50]}...")
+
+    try:
+        async with httpx.AsyncClient() as client:
+            # Make the request to Gmail API to get messages
+            response = await client.get(
+                "https://www.googleapis.com/gmail/v1/users/me/messages",
+                headers={"Authorization": f"Bearer {access_token}"},
+                params={"maxResults": max_results}
+            )
+
+            # handle errors
+            if response.status_code != 200:
+                logging.error(f"Gmail API error: {response.status_code} - {response.text}")
+                raise HTTPException(status_code=response.status_code, detail="Failed to fetch Gmail messages.")
+            
+            logging.info("Gmail messages fetched successfully.")
+            return response.json()
+        
+    except Exception as e:
+        logging.error(f"Error fetching Gmail messages: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error while fetching Gmail messages.")
+    
+@app.get("/gmail/messages/{message_id}", tags=["Gmail"], summary="Get Gmail Message by ID")
+async def get_gmail_message(
+    message_id: str,
+    authorization: Optional[str] = Header(None) # extract Authorization header
+):
+    """Fetch a specific Gmail message by its ID."""
+    if not authorization or  not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="No valid Authorization header provided.")
+    
+    access_token = authorization.replace("Bearer ", "")
+
+    # Fetch the specific message from Gmail API
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"https://www.googleapis.com/gmail/v1/users/me/messages/{message_id}",
+                headers={"Authorization": f"Bearer {access_token}"},
+            )
+
+            # handle errors
+            if response.status_code != 200:
+                logging.error(f"Gmail API error: {response.status_code} - {response.text}")
+                raise HTTPException(status_code=response.status_code, detail="Failed to fetch Gmail message.")
+            
+            logging.info(f"Gmail message {message_id} fetched successfully.")
+            return response.json()
+        
+    except Exception as e:
+        logging.error(f"Error fetching Gmail message {message_id}: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error while fetching Gmail message.")
 
 
 # Sanity Checks and Health Endpoints
