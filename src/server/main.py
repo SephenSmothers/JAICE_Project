@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from services.firebase_admin import initialize_firebase_sdk, check_firebase_auth_health
-from api.auth import router as auth_router
+from api.auth_api import router as auth_router
 from services.supabase_client import check_db_pool_status, connect_to_db, close_db_connection
 import httpx
 
@@ -17,30 +17,31 @@ async def lifespan(app: FastAPI):
     # Handles application startup (before 'yield') and shutdown (after 'yield') events.
     
     # STARTUP LOGIC (Runs on application start)
+    logging.info("Starting up the application...")
+    
+    # Initialize Firebase Admin SDK
     try:
-        logging.info("Starting up the application...")
-        
-        # Initialize external SDKs (Firebase/Auth)
-        initialize_firebase_sdk() 
-        
-        # Connect to the Database
-        # This function should create the global connection pool (db_pool)
-        await connect_to_db() 
-
-        logging.info("Database connected on startup.")
-        logging.info("Application startup tasks completed.")
-
+        initialize_firebase_sdk()
+        logging.info("Firebase SDK initialized.")
     except Exception as e:
-        # If a critical dependency fails, log the error and re-raise it to crash the application, as designed.
-        logging.error(f"FATAL: Startup failed: {e}")
+        logging.error(f"FATAL: Firebase SDK initialization failed: {e}")
+    
+    # Initialize and store the database connection pool in app state
+    try:
+        app.state.pool = await connect_to_db() # returns the pool instance
+        logging.info("Database connection pool created and assigned to app.state.")
+    except Exception as e:
+        logging.error(f"Fatal: Database connection failed: {e}")
         raise
 
     # The application starts serving requests here
     yield 
 
+    if app.state.pool:
+        await close_db_connection()
+        logging.info("Database connection pool closed.")
     # Runs when the application stops
     # Close the database connection pool gracefully
-    await close_db_connection()
     logging.info("Application shutdown complete.")
 
 # Create the FastAPI application instance with lifespan management

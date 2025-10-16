@@ -47,6 +47,7 @@ async def connect_to_db():
             max_size=10
         )
         logging.info("Database connection pool established successfully.")
+        return db_pool
     
     # PASSWORD Error -> It was either changed or not properly set up.
     except InvalidPasswordError:
