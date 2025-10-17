@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useState } from "react";
-import downChevron from "@/client/assets/Icons/angle-small-down.svg";
+import downChevron from "@/client/assets/icons/angle-small-down.svg";
 import uncheckIcon from "@/client/assets/icons/uncheck-icon.svg";
 import checkIcon from "@/client/assets/icons/check-icon.svg";
 
