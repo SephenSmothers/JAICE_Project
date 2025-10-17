@@ -61,6 +61,9 @@ export async function googleSignIn()
       {
           // store token for gmail API calls
           localStorage.setItem('google_access_token', accessToken);
+
+          // mark user has granted gmail consent
+          localStorage.setItem('gmail_consent_granted', 'true');
           console.log('Google access token stored in localStorage.');
       } else {
           console.warn('No access token found in Google sign-in result.');
@@ -105,11 +108,29 @@ export function hasGmailAccess(): boolean
 
     // check if user signed in with google and has access token
     const isGoogleUser = user.providerData.some(p => p.providerId === 'google.com');
-    const hasToken = !!getGoogleAccessToken();
 
-    return isGoogleUser && hasToken;
+    if (isGoogleUser) 
+    {
+      const hasToken = !!getGoogleAccessToken();
+          // check if they have previously granted consent
+      const hasGrantedConsent = localStorage.getItem('gmail_consent_granted') === 'true';
+      return hasToken || hasGrantedConsent;
+    } else {
+      return localStorage.getItem('gmail_consent_granted') === 'true';
+    }
 }
 
+// check if user has previously granted gmail consent
+export function hasGmailConsentGranted(): boolean
+{
+    return localStorage.getItem('gmail_consent_granted') === 'true';
+}
+
+// mark the user has granted gmail consent
+export function setGmailConsentGranted(): void
+{
+    localStorage.setItem('gmail_consent_granted', 'true');
+}
 
 // get user info including gmail access status
 export function getCurrentUserInfo()
