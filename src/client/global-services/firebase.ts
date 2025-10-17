@@ -22,9 +22,6 @@ export const googleProvider = new GoogleAuthProvider();
 googleProvider.addScope('https://www.googleapis.com/auth/gmail.readonly');
 googleProvider.addScope('https://www.googleapis.com/auth/gmail.labels');
 
-googleProvider.setCustomParameters({
-    prompt: 'consent'
-});
 
 // Persist sessions across tabs/reloads
 await setPersistence(auth, browserLocalPersistence);
