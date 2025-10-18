@@ -116,14 +116,17 @@ def phase_1_mint_jwt(uid: str) -> str:
       logging.error("SUPABASE_JWT_SECRET environment variable is not set.")
       raise ValueError("SUPABASE_JWT_SECRET environment variable is not set. Cannot sign RLS token.")
   
+  clock_skew_buffer = timedelta(minutes=5)
+  now = datetime.now(timezone.utc)
+  adjusted_iat = now - clock_skew_buffer
   expiration_time = datetime.now(timezone.utc) + timedelta(days=BACKGROUND_DURATION_DAYS)
   
   payload = {
       "sub": uid,           
       "user_id": uid,
       "role": "authenticated",
-      "iat": datetime.now(timezone.utc).timestamp(),
-      "exp": expiration_time.timestamp(),
+      "iat": int(adjusted_iat.timestamp()),
+      "exp": int(expiration_time.timestamp()),
   }
   logging.debug(f"RLS JWT payload: {payload}")
   return jwt.encode(
