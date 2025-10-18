@@ -4,7 +4,7 @@ from firebase_admin import credentials, auth
 from dotenv import load_dotenv
 import asyncio
 
-from utils.logger import get_logger
+from src.core_api.utils.logger import get_logger
 logging = get_logger()
 
 # Still load the env but shift it into a function

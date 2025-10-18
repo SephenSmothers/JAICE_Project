@@ -2,11 +2,12 @@ from fastapi import FastAPI, HTTPException, status
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from services.firebase_admin import initialize_firebase_sdk, check_firebase_auth_health
-from api.auth import router as auth_router
-from services.supabase_client import check_db_pool_status, connect_to_db, close_db_connection
+from src.core_api.services.firebase_admin import initialize_firebase_sdk, check_firebase_auth_health
+from src.core_api.api.auth import router as auth_router
+from src.core_api.services.supabase_client import check_db_pool_status, connect_to_db, close_db_connection
+from src.packages.shared_worker_library.tasks.model_1_tasks import inspect_email
 
-from utils.logger import get_logger
+from src.core_api.utils.logger import get_logger
 logging = get_logger()
 
 # Application instance with lifespan management

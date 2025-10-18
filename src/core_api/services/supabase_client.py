@@ -6,7 +6,7 @@ import asyncpg
 from asyncpg.exceptions import InvalidPasswordError, CannotConnectNowError
 import os
 from dotenv import load_dotenv
-from utils.logger import get_logger
+from src.core_api.utils.logger import get_logger
 
 logging = get_logger()
 # Set up logging for granular debug information
