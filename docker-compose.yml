@@ -22,15 +22,15 @@ services:
       - redis
 
   # Runs the front end in build mode
-  frontend:
-    container_name: frontend
-    build:
-      context: .
-      dockerfile: ./src/client/DockerFile
-    ports:
-      - "5173:80"
-    depends_on:
-      - core_api
+  # frontend:
+  #   container_name: frontend
+  #   build:
+  #     context: .
+  #     dockerfile: ./src/client/DockerFile
+  #   ports:
+  #     - "5173:80"
+  #   depends_on:
+  #     - core_api
 
   # The coordinator service that manages task distribution
   coordinator:
