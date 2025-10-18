@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from services.firebase_admin import verify_id_token
+from src.core_api.services.firebase_admin import verify_id_token
 
 # Security scheme for HTTP Bearer authentication
 bearer = HTTPBearer(auto_error=False)

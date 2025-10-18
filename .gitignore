@@ -40,3 +40,9 @@ src/server/.env
 # Credentials
 **/client_secrets.json
 **/credentials.json
+
+# Docker files
+.dockerignore
+
+# VS CODE Scripts
+**/.vscode/ 

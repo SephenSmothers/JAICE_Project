@@ -1,26 +1,27 @@
 services:
   # Our Redis Service for managing the message queues
   redis:
-    image: redis:7-alpine
     container_name: redis
+    image: redis:7-alpine
     ports:
       - "6379:6379"
 
   # Our FastAPI backend service
-  api:
-    build:
-      context: ./src/server
-      dockerfile: DockerFile
+  core_api:
     container_name: core_api
+    build:
+      context: .
+      dockerfile: ./src/core_api/DockerFile
     env_file:
       - .env
     ports:
       - "8000:8000"
     volumes:
-      - ./src/server:/app
+      - ./src:/app/src
     depends_on:
       - redis
 
+  # Runs the front end in build mode
   frontend:
     container_name: frontend
     build:
@@ -29,4 +30,66 @@ services:
     ports:
       - "5173:80"
     depends_on:
-      - api
+      - core_api
+
+  # The coordinator service that manages task distribution
+  coordinator:
+    container_name: coordinator_service
+    build:
+      context: .
+      dockerfile: ./src/coordinator/DockerFile
+    env_file:
+      - .env
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./src/coordinator:/app/coordinator
+      - ./src/core_api:/app/core_api
+    depends_on:
+      - redis
+
+  # Worker service for Model 1
+  model_1_worker:
+    container_name: model_one_worker
+    build:
+      context: .
+      dockerfile: ./src/core_api/DockerFile
+    environment:
+      - PYTHONPATH=/app
+    command: watchfiles --filter python 'celery -A src.packages.shared_worker_library.celery_worker.celery_app worker -n model_one_worker -E -Q new_mail_queue --loglevel=info'
+    env_file:
+      - .env
+    volumes:
+      - ./src:/app/src
+    depends_on:
+      - redis
+  
+  # Worker service for Model 2
+  model_2_worker:
+    container_name: model_two_worker
+    build:
+      context: .
+      dockerfile: ./src/core_api/DockerFile
+    environment:
+      - PYTHONPATH=/app
+    command: watchfiles --filter python 'celery -A src.packages.shared_worker_library.celery_worker.celery_app worker -n model_two_worker -E -Q relevant_mail_queue --loglevel=info'
+    env_file:
+      - .env    
+    volumes:
+      - ./src:/app/src
+    depends_on:
+      - redis
+
+  # Flower monitoring tool for Celery
+  flower:
+    container_name: flower_monitor
+    image: mher/flower
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+      - model_1_worker
+      - model_2_worker
