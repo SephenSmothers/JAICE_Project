@@ -6,12 +6,66 @@ import { auth} from "../../../global-services/firebase";
 import Button from "@/client/global-components/button";
 import { deleteCurrentUser } from "@/client/global-services/auth";
 import { useState } from "react";
+import { api } from "@/client/global-services/api";
+import { getIdToken, setGmailConsentGranted } from "@/client/global-services/auth";
 
+// gains consent and updates the db accordingly
+async function connectGmailAPI() 
+{
+  try
+  {
+    console.log("Starting Gmail connection check...");
+    
+    // check the server-side consent status
+    console.log("Checking server-side Gmail consent status...");
+    const response = await api("/api/auth/gmail-consent-status");
+    console.log("Server response:", response);
+
+    if (response.isConnected) 
+    {
+      console.log("Gmail consent status: Established on server");
+      setGmailConsentGranted();
+    } 
+    
+    console.log("Gmail consent status: Not established, redirecting to consent");
+    const token = await getIdToken();
+    console.log("Redirecting with token to consent page...");
+    window.location.href = `http://localhost:8000/api/auth/consent?token=${token}`;
+    return { success: true, message: "Redirecting to Gmail consent screen" };
+
+  } catch (error) {
+    console.error("Error in connectGmailAPI:", error);
+    return { success: false, message: `Error connecting to Gmail: ${error}` };
+  }
+}
 
 export function AccountPage() 
 {
-const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [gmailConnected, setGmailConnected] = useState(false);
+  const [gmailBusy, setGmailBusy] = useState(false);
+
+  async function handleGmailConnection() 
+  {
+    setGmailBusy(true);
+    setError(null);
+
+    const result = await connectGmailAPI();
+
+    if(result.success)
+    {
+      setGmailConnected(true);
+
+      if(!result.message?.includes("Redirecting"))
+      {
+        console.log(result.message);
+      }
+    } else {
+      setError(result.message);
+    }
+    setGmailBusy(false);
+  }
 
   async function handleDelete() {
     setError(null);
@@ -141,11 +195,22 @@ const [busy, setBusy] = useState(false);
 
             {/* email */}
             <div className="my-6 text-left">
-              <button
-                onClick={() => console.log("Manage Linked Emails clicked")}
+              <h3 className="text-lg font-medium text-gray-300 mb-2">
+                Gmail Integration
+              </h3>
+              <p className="text-sm text-gray-400 mb-4">
+                Connect your Gmail account to allow email parsing and analysis.
+              </p>
+              <Button 
+                onClick={gmailBusy || gmailConnected ? undefined : handleGmailConnection}
               >
-                Manage Linked Emails
-              </button>
+                {gmailBusy ? "Connecting..." : gmailConnected ? "Connected" : "Connect Gmail"}
+              </Button>
+              {error && (
+                <p className="mt-2 text-sm text-red-400" role="alert">
+                  {error}
+                </p>
+              )}
             </div>
 
             {/* password */}
