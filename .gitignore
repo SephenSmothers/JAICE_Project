@@ -26,7 +26,7 @@ dist-ssr
 # env files
 .env
 .env.local
-.env..local
+.env.*.local
 src/server/.env
 
 # Virtual environments
@@ -34,7 +34,7 @@ src/server/.env
 **/.env
 
 # Python cache files
-**/pycache/
+**/__pycache__/
 **/*.pyc
 
 # Credentials files
@@ -45,4 +45,4 @@ src/server/.env
 .dockerignore
 
 # VS CODE Scripts
-**/.vscode/ 
+**/.vscode/
