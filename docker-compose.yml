@@ -7,17 +7,15 @@ services:
       - "6379:6379"
 
   # Our FastAPI backend service
-  core_api:
-    container_name: core_api
+  client_api:
+    container_name: client_api
     build:
       context: .
-      dockerfile: ./src/core_api/DockerFile
+      dockerfile: ./client_api/Dockerfile.client_api
     env_file:
       - .env
     ports:
       - "8000:8000"
-    volumes:
-      - ./src:/app/src
     depends_on:
       - redis
 
@@ -26,64 +24,53 @@ services:
   #   container_name: frontend
   #   build:
   #     context: .
-  #     dockerfile: ./src/client/DockerFile
+  #     dockerfile: ./src/client/Dockerfile.client
   #   ports:
   #     - "5173:80"
   #   depends_on:
   #     - core_api
 
-  # The coordinator service that manages task distribution
-  coordinator:
-    container_name: coordinator_service
+
+  gmail_worker_request_intake:
+    container_name: gmail_worker_request_intake
     build:
       context: .
-      dockerfile: ./src/coordinator/DockerFile
+      dockerfile: ./shared_worker_library/Dockerfile.worker
+    command: >
+      celery -A shared_worker_library.worker.gmail_worker worker -Q gmail_initial_sync_queue -l info -E -n request_intake@%h
     env_file:
       - .env
-    ports:
-      - "8001:8000"
-    volumes:
-      - ./src/coordinator:/app/coordinator
-      - ./src/core_api:/app/core_api
     depends_on:
       - redis
 
-  # Worker service for Model 1
-  model_1_worker:
-    container_name: model_one_worker
+  gmail_worker_fetch_content:
+    container_name: gmail_worker_fetch_content
     build:
       context: .
-      dockerfile: ./src/core_api/DockerFile
-    environment:
-      - PYTHONPATH=/app
-    command: watchfiles --filter python 'celery -A src.packages.shared_worker_library.celery_worker.celery_app worker -n model_one_worker -E -Q new_mail_queue --loglevel=info'
+      dockerfile: ./shared_worker_library/Dockerfile.worker
+    command: >
+      celery -A shared_worker_library.worker.gmail_worker worker -Q gmail_fetch_content_queue -l info -E -n fetch_content@%h
     env_file:
       - .env
-    volumes:
-      - ./src:/app/src
     depends_on:
       - redis
-  
-  # Worker service for Model 2
-  model_2_worker:
-    container_name: model_two_worker
+
+  relevance_model_worker:
+    container_name: relevance_model_worker
     build:
       context: .
-      dockerfile: ./src/core_api/DockerFile
-    environment:
-      - PYTHONPATH=/app
-    command: watchfiles --filter python 'celery -A src.packages.shared_worker_library.celery_worker.celery_app worker -n model_two_worker -E -Q relevant_mail_queue --loglevel=info'
+      dockerfile: ./shared_worker_library/Dockerfile.worker
+    command: >
+      celery -A shared_worker_library.worker.relevance_model_worker worker -Q relevance_model_queue -l info -E
     env_file:
-      - .env    
-    volumes:
-      - ./src:/app/src
+      - .env
     depends_on:
       - redis
 
   # Flower monitoring tool for Celery
   flower:
     container_name: flower_monitor
-    image: mher/flower
+    image: mher/flower:2.0.1
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
@@ -91,5 +78,3 @@ services:
       - "5555:5555"
     depends_on:
       - redis
-      - model_1_worker
-      - model_2_worker
