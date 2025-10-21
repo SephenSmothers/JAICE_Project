@@ -29,18 +29,14 @@ dist-ssr
 .env.*.local
 src/server/.env
 
-# Virtual environments
+# Python virtual environments and env files
 **/.venv/
 **/.env
 
-# Python cache files
+# Ignore all __pycache__ folders and .pyc files
 **/__pycache__/
 **/*.pyc
 
-# Credentials files
+# Credentials
 **/client_secrets.json
 **/credentials.json
-
-# Docker files
-.dockerignore
-src/server/client_secrets.json

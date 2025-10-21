@@ -335,7 +335,13 @@ export function AccountPage()
                 className="red"
               >
                 {busy ? "Deleting..." : "Delete Account"}
+                {busy ? "Deleting..." : "Delete Account"}
               </button>
+              {error && (
+                <p className="mt-2 text-sm text-red-400" role="alert">
+                  {error}
+                </p>
+              )}
               {error && (
                 <p className="mt-2 text-sm text-red-400" role="alert">
                   {error}
