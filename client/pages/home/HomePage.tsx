@@ -37,30 +37,30 @@ export function HomePage() {
   ];
 
   // Clear Selected jobs when multi-select mode is turned off
-  useEffect(() => {
-    async function loadEmails() {
-      if (emailsLoaded || isLoadingEmails) return; // Prevent multiple loads
+  // useEffect(() => {
+  //   async function loadEmails() {
+  //     if (emailsLoaded || isLoadingEmails) return; // Prevent multiple loads
 
-      setIsLoadingEmails(true);
+  //     setIsLoadingEmails(true);
 
-      try {
-        const emails = await getLastEmails(10); // Fetch the last 10 emails
-        const emailJobCards = convertEmailsToJobCards(emails); // Convert emails to job card format
+  //     try {
+  //       const emails = await getLastEmails(10); // Fetch the last 10 emails
+  //       const emailJobCards = convertEmailsToJobCards(emails); // Convert emails to job card format
 
-        setJobs(emailJobCards); // Update state with fetched job cards
-        setEmailsLoaded(true); // Mark emails as loaded
-      } catch (error) {
-        console.error("Failed to load emails:", error);
-        setEmailsLoaded(true); // Even on failure mark as loaded to prevent retrying
-      }
-      finally
-      {
-        setIsLoadingEmails(false);
-      }
-    }
+  //       setJobs(emailJobCards); // Update state with fetched job cards
+  //       setEmailsLoaded(true); // Mark emails as loaded
+  //     } catch (error) {
+  //       console.error("Failed to load emails:", error);
+  //       setEmailsLoaded(true); // Even on failure mark as loaded to prevent retrying
+  //     }
+  //     finally
+  //     {
+  //       setIsLoadingEmails(false);
+  //     }
+  //   }
     
-    loadEmails();
-  }, [ emailsLoaded, isLoadingEmails]);
+  //   loadEmails();
+  // }, [ emailsLoaded, isLoadingEmails]);
 
   // Clear selected jobs when multi-select mode is turned off
   useEffect(() => {
