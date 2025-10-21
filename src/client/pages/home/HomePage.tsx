@@ -4,13 +4,14 @@ import { Column } from "./home-components/Column";
 import { JobCard } from "./home-components/JobCards";
 import type { JobCardType } from "./home-components/JobCards";
 
-import mockJobs from "./MockJobCards.json";
+import { getLastEmails, convertEmailsToJobCards } from "@/client/global-services/readEmails";
+
+//import mockJobs from "./MockJobCards.json";
 
 export function HomePage() {
   // State Variables
   const [isMultiSelecting, setIsMultiSelecting] = useState(false); // to track if multi-select mode is active
   const [selectedJobs, setSelectedJobs] = useState<JobCardType[]>([]); // to track the selected job cards
-
   const [selectedOption, setSelectedOption] = useState("default"); // to track the selected sorting option
   const [isMenuOpen, setMenuOpen] = useState(false); // to track if the options menu is open
   const [isSearching, setIsSearching] = useState(false); // to track if the search bar is active
@@ -18,9 +19,12 @@ export function HomePage() {
   const [isAlertOpen, setIsAlertOpen] = useState(false); // to track if the alert box is open
   const [alertMessage] = useState("No Alerts"); // to hold the current alert message
   const [isInfoModalOpen, setInfoModalOpen] = useState(false); // to track if the info modal is open
-  const [jobs, setJobs] = useState(mockJobs); // to hold the list of job cards (initially set to mock data)
+  const [jobs, setJobs] = useState<JobCardType[]>([]); // to hold the list of job cards (initially set to mock data)
   const [itemDragged, setItemDragged] = useState<JobCardType | null>(null); // to track the item being dragged
   const [isOver, setIsOver] = useState<string | null>(null); // to track which column is being hovered over during drag-and-drop
+
+  const [emailsLoaded, setEmailsLoaded] = useState(false); // to track if emails have been loaded
+  const [isLoadingEmails, setIsLoadingEmails] = useState(false); // to prevent multiple email load attempts
 
   const sortByOptions = [
     { value: "default", label: "Sort by" },
@@ -32,13 +36,39 @@ export function HomePage() {
 
   // Clear Selected jobs when multi-select mode is turned off
   useEffect(() => {
-    // If multi-select mode is turned off, clear the selected jobs
-    if (!isMultiSelecting) {
+    async function loadEmails() {
+      if (emailsLoaded || isLoadingEmails) return; // Prevent multiple loads
+
+      setIsLoadingEmails(true);
+
+      try {
+        const emails = await getLastEmails(10); // Fetch the last 10 emails
+        const emailJobCards = convertEmailsToJobCards(emails); // Convert emails to job card format
+
+        setJobs(emailJobCards); // Update state with fetched job cards
+        setEmailsLoaded(true); // Mark emails as loaded
+      } catch (error) {
+        console.error("Failed to load emails:", error);
+        setEmailsLoaded(true); // Even on failure mark as loaded to prevent retrying
+      }
+      finally
+      {
+        setIsLoadingEmails(false);
+      }
+    }
+    
+    loadEmails();
+  }, [ emailsLoaded, isLoadingEmails]);
+
+  // Clear selected jobs when multi-select mode is turned off
+  useEffect(() => {
+    if (!isMultiSelecting) 
+    {
       setSelectedJobs([]);
     }
   }, [isMultiSelecting]);
 
-  const handleJobCardClick = (job: JobCardType) => {
+  const handleJobCardClick = useCallback((job: JobCardType) => {
     if (isMultiSelecting) {
       // If in multi-select mode, toggle selection of the clicked job card
       setSelectedJobs((prevSelected) => {
@@ -53,7 +83,7 @@ export function HomePage() {
     } else {
       setSelectedJobs([]); // If not in multi-select mode, clear the selection
     }
-  };
+  }, [isMultiSelecting]);
 
   // Log selected jobs for debugging purposes
   useEffect(() => {
@@ -160,7 +190,18 @@ export function HomePage() {
       // Return the accumulated object for the next iteration (i.e. the next column)
       return acc;
     }, {});
-  }, [jobs, columnConfig]);
+  }, [jobs, columnConfig, isMultiSelecting, handleJobCardClick]);
+
+  // show loading state while emails are being fetched
+  if (isLoadingEmails) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="text-center">
+          <p> Loading emails...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-full flex items-center justify-center flex-col ">
@@ -187,6 +228,14 @@ export function HomePage() {
           isInfoModalOpen={isInfoModalOpen}
           setInfoModalOpen={setInfoModalOpen}
         />
+
+        {/* show message if no emails are loaded */}
+        {jobs.length === 0 && !isLoadingEmails && (
+          <div className="text-center">
+            <p>No emails found.</p>
+          </div>
+        )}
+
         {/* Kan Ban Columns */}
         <div className="flex gap-4 w-full">
           {columnConfig.map(

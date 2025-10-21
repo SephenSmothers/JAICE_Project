@@ -18,5 +18,10 @@ const app = getApps.length ? getApps()[0] : initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
+// gmail API scopes to request during sign-in
+googleProvider.addScope('https://www.googleapis.com/auth/gmail.readonly');
+googleProvider.addScope('https://www.googleapis.com/auth/gmail.labels');
+
+
 // Persist sessions across tabs/reloads
 await setPersistence(auth, browserLocalPersistence);
