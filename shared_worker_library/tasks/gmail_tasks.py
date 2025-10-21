@@ -7,7 +7,7 @@ from google.oauth2.credentials import Credentials
 from shared_worker_library.database import get_connection
 from common.security import encrypt_token, decrypt_token
 from googleapiclient.discovery import build
-from shared_worker_library.utils.task_definitions import TaskType
+from shared_worker_library.utils.task_definitions import TaskType, EmailStatus
 from common.logger import get_logger
 from shared_worker_library.db_queries.gmail_queries import get_refresh_token
 from enum import Enum
@@ -561,9 +561,3 @@ def get_access_token_from_refresh(refresh_token: str, trace_id: str) -> str:
     logging.info(f"[{trace_id}] ----- Successfully retrieved Gmail access token.")
     return access_token
 
-
-class EmailStatus(Enum):
-    AWAIT_RELEVANCE = "AWAIT_RELEVANCE"
-    RETRY = "RETRY"
-    PURGE = "PURGE"
-    AWAIT_CLASSIFICATION = "AWAIT_CLASSIFICATION"
