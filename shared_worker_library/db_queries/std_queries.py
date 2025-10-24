@@ -12,6 +12,7 @@ def get_encrypted_emails(trace_id: str, row_ids: list[int]):
             cur.execute(
                 "SELECT id, subject_enc, sender_enc, body_enc FROM internal_staging.email_staging WHERE id = ANY(%s)",
                 (row_ids,),
+                prepare=False
             )
             results = cur.fetchall()
             logging.info(f"[{trace_id}] Retrieved {len(results)} encrypted emails")
@@ -28,6 +29,7 @@ def update_staging_table_failure(trace_id: str, row_ids: list[int]):
                 cur.execute(
                     "UPDATE internal_staging.email_staging SET status = %s WHERE id = %s",
                     (EmailStatus.FAILED_PERMANENTLY.value, row_id),
+                    prepare=False,
                 )
         conn.commit()
     logging.info(f"Staging table updated to FAILED_PERMANENTLY for trace_id {trace_id}")
