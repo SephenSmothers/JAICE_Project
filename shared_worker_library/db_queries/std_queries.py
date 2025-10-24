@@ -32,5 +32,5 @@ def update_staging_table_failure(trace_id: str, row_ids: list[int]):
                     prepare=False,
                 )
         conn.commit()
-    logging.info(f"Staging table updated to FAILED_PERMANENTLY for trace_id {trace_id}")
+    logging.info(f"[{trace_id}] Staging table updated to FAILED_PERMANENTLY")
     return {"status": "updated_to_failed_permanently"}
