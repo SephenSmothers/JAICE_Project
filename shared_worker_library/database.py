@@ -18,7 +18,7 @@ def get_pool() -> ConnectionPool:
     global pool
     with _pool_lock:
         if pool is None:
-            logging.info("Initializing new connection pool for this process...")
+            logging.info("INIT NEW DB POOL FOR PROCESS")
             pool = ConnectionPool(
                 conninfo=DATABASE_URL,
                 min_size=1,
@@ -38,6 +38,8 @@ def get_connection():
     conn = process_pool.getconn()
     try:
         conn.prepare_threshold = 0
+        logging.info("Acquired DB connection from pool")
         yield conn
     finally:
+        logging.info("Releasing DB connection back to pool")
         process_pool.putconn(conn)

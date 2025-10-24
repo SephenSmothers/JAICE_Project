@@ -6,7 +6,7 @@ from shared_worker_library.utils.task_definitions import EmailStatus
 logging = get_logger()
 
 def get_encrypted_emails(trace_id: str, row_ids: list[int]):
-    logging.info(f"[{trace_id}] Getting encrypted emails for row IDs: {row_ids}")
+    logging.info(f"[{trace_id}] Getting encrypted emails")
     with get_connection() as conn:
         with conn.cursor(row_factory=dict_row) as cur:
             cur.execute(
@@ -20,9 +20,8 @@ def get_encrypted_emails(trace_id: str, row_ids: list[int]):
 
 
 def update_staging_table_failure(trace_id: str, row_ids: list[int]):
-    logging.info(
-        f"Updating staging table to FAILED_PERMANENTLY for trace_id {trace_id}"
-    )
+    logging.info(f"[{trace_id}] Updating staging table to FAILED_PERMANENTLY")
+    
     with get_connection() as conn:
         with conn.cursor() as cur:
             for row_id in row_ids:

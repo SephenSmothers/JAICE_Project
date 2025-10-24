@@ -35,7 +35,7 @@ r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
 )
 def initial_sync(self, uid: str, trace_id: str):
     logging.info(
-        f"[{trace_id}] ----- Gmail Initial Sync Dispatcher: Starting initial sync for UID: {uid}"
+        f"[{trace_id}] Gmail Initial Sync Dispatcher: Starting initial sync"
     )
 
     try:
@@ -43,7 +43,7 @@ def initial_sync(self, uid: str, trace_id: str):
         token = decrypt_token(encrypted_token)
     except Exception as e:
         logging.error(
-            f"[{trace_id}] ----- Gmail Initial Sync Dispatcher: Error retrieving refresh token for UID {uid}: {e}"
+            f"[{trace_id}] Gmail Initial Sync Dispatcher: Error retrieving refresh token: {e}"
         )
         raise self.retry(exc=e)
 
@@ -52,7 +52,7 @@ def initial_sync(self, uid: str, trace_id: str):
 
     except Exception as e:
         logging.error(
-            f"[{trace_id}] ----- Gmail Initial Sync Dispatcher: Error obtaining access token for UID {uid}: {e}"
+            f"[{trace_id}] Gmail Initial Sync Dispatcher: Error obtaining access token: {e}"
         )
         raise self.retry(exc=e)
 
@@ -60,26 +60,26 @@ def initial_sync(self, uid: str, trace_id: str):
         message_ids = fetch_message_ids(access_token, trace_id, DAYS_TO_SYNC)
     except Exception as e:
         logging.error(
-            f"[{trace_id}] -----  Gmail Initial Sync Dispatcher: Error fetching message IDs for UID {uid}: {e}"
+            f"[{trace_id}] Gmail Initial Sync Dispatcher: Error fetching message IDs: {e}"
         )
         raise self.retry(exc=e)
 
     try:
         for batch in chunk_list(message_ids, EMAILS_PER_BATCH):
             logging.info(
-                f"[{trace_id}] ----- Gmail Initial Sync Dispatcher: Enqueuing content fetch task for batch of size {len(batch)} for UID {uid}"
+                f"[{trace_id}] Gmail Initial Sync Dispatcher: Enqueuing content fetch task for batch of size {len(batch)}"
             )
             fetch_content.delay(
                 batch, encrypt_token(uid), trace_id, encrypt_token(access_token)
             )
     except Exception as e:
         logging.error(
-            f"[{trace_id}] ----- Gmail Initial Sync Dispatcher: Error enqueuing content fetch tasks for UID {uid}: {e}"
+            f"[{trace_id}] Gmail Initial Sync Dispatcher: Error enqueuing content fetch tasks: {e}"
         )
         raise self.retry(exc=e)
 
     logging.info(
-        f"[{trace_id}] ----- Gmail Initial Sync Dispatcher: Completed enqueuing tasks for UID: {uid}"
+        f"[{trace_id}] Gmail Initial Sync Dispatcher: Completed enqueuing tasks."
     )
 
 
@@ -107,7 +107,7 @@ def fetch_content(
     uid = decrypt_token(encrypted_uid)
     access_token = decrypt_token(encrypted_access_token)
     logging.info(
-        f"[{trace_id}] fetch_content: start (batch={len(message_id_batch)}) user={uid}"
+        f"[{trace_id}] fetch_content: start (batch={len(message_id_batch)})"
     )
 
 
@@ -132,7 +132,7 @@ def fetch_content(
     except _LockNotAcquired:
         delay = _backoff(self.request.retries)
         logging.info(
-            f"[{trace_id}] fetch_content: user={uid} busy; rescheduling in {delay:.2f}s"
+            f"[{trace_id}] lock not acquired retrying in: {delay:.2f}s"
         )
         raise self.retry(countdown=delay, exc=_LockNotAcquired())
 

@@ -6,7 +6,7 @@ logging = get_logger()
 
 
 def update_staging_table(trace_id: str, model_results: RelevanceModelResult):
-    logging.info(f"Updating staging table for trace_id {trace_id}")
+    logging.info(f"[{trace_id}] Updating staging table")
     with get_connection() as conn:
         with conn.cursor() as cur:
             for item in model_results.relevant:
@@ -28,6 +28,6 @@ def update_staging_table(trace_id: str, model_results: RelevanceModelResult):
                     prepare=False
                 )
         conn.commit()
-    logging.info(f"Staging table updated for trace_id {trace_id}")
+    logging.info(f"[{trace_id}] Staging table updated")
     return {"status": "updated"}
 

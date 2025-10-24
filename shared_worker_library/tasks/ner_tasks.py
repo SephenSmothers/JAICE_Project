@@ -90,9 +90,7 @@ def normalized_emails_for_model(trace_id: str, emails: list[dict]) -> list[dict]
     return emails
 
 def run_ner_model(trace_id: str, emails: list[dict]) -> list[dict]:
-    logging.warning(
-        f"Running NER model for trace_id {trace_id}. Functionality not yet implemented."
-    )
+    logging.warning(f"[{trace_id}] Running NER model. Functionality not yet implemented.")
     # This is where the NER model logic will sit. It will always receive normalized emails that have been decrypted.
     # It should return a NERModelResult object with relevant, retry, and purge lists.
     #
