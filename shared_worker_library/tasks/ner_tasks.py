@@ -57,7 +57,6 @@ def ner_task(trace_id: str, row_ids: list):
     logging.info(f"[{trace_id}] NER task completed successfully")
     return {"status": "success", "results": results}
 
-
 def decrypt_email_content(trace_id: str, encrypted_emails: List[Dict]) -> List[Dict]:
     logging.info(f"[{trace_id}] Decrypting email content")
     # This will need to be optimized to only create the necessary decrypted fields for the NER model.
@@ -76,7 +75,6 @@ def decrypt_email_content(trace_id: str, encrypted_emails: List[Dict]) -> List[D
             logging.error(f"[{trace_id}] Error decrypting email ID {email['id']}: {e}")
     return decrypted_emails
 
-
 def normalized_emails_for_model(trace_id: str, emails: list[dict]) -> list[dict]:
     logging.warning(
         f"Normalizing emails for trace_id {trace_id}. Functionality not yet implemented."
@@ -90,8 +88,6 @@ def normalized_emails_for_model(trace_id: str, emails: list[dict]) -> list[dict]
     # }
     # For now, we just return the emails as-is.
     return emails
-
-
 
 def run_ner_model(trace_id: str, emails: list[dict]) -> list[dict]:
     logging.warning(

@@ -13,16 +13,19 @@ def update_staging_table(trace_id: str, model_results: RelevanceModelResult):
                 cur.execute(
                     "UPDATE internal_staging.email_staging SET status = %s WHERE id = %s",
                     (EmailStatus.AWAIT_CLASSIFICATION.value, item["email_id"]),
+                    prepare=False
                 )
             for item in model_results.retry:
                 cur.execute(
                     "UPDATE internal_staging.email_staging SET status = %s WHERE id = %s",
                     (EmailStatus.RETRY.value, item["email_id"]),
+                    prepare=False
                 )
             for item in model_results.purge:
                 cur.execute(
                     "UPDATE internal_staging.email_staging SET status = %s WHERE id = %s",
                     (EmailStatus.PURGE.value, item["email_id"]),
+                    prepare=False
                 )
         conn.commit()
     logging.info(f"Staging table updated for trace_id {trace_id}")
