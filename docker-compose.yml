@@ -31,8 +31,8 @@ services:
   #     - core_api
 
 
-  gmail_worker_request_intake:
-    container_name: gmail_worker_request_intake
+  gmail_request_intake:
+    container_name: gmail_request_intake
     build:
       context: .
       dockerfile: ./shared_worker_library/Dockerfile.worker
@@ -43,8 +43,8 @@ services:
     depends_on:
       - redis
 
-  gmail_worker_fetch_content:
-    container_name: gmail_worker_fetch_content
+  gmail_fetch_content:
+    container_name: gmail_fetch_content
     build:
       context: .
       dockerfile: ./shared_worker_library/Dockerfile.worker
@@ -55,25 +55,37 @@ services:
     depends_on:
       - redis
 
-  relevance_model_worker:
-    container_name: relevance_model_worker
+  relevance_worker:
+    container_name: relevance_worker
     build:
       context: .
       dockerfile: ./shared_worker_library/Dockerfile.worker
     command: >
-      celery -A shared_worker_library.worker.relevance_model_worker worker -Q relevance_model_queue -l info -E -n relevance_model
+      celery -A shared_worker_library.worker.relevance_worker worker -Q relevance_model_queue -l info -E -n relevance_model
     env_file:
       - .env
     depends_on:
       - redis
 
-  classification_model_worker:
-    container_name: classification_model_worker
+  classification_worker:
+    container_name: classification_worker
     build:
       context: .
       dockerfile: ./shared_worker_library/Dockerfile.worker
     command: >
-      celery -A shared_worker_library.worker.classification_model_worker worker -Q classification_model_queue -l info -E -n classification_model
+      celery -A shared_worker_library.worker.classification_worker worker -Q classification_model_queue -l info -E -n classification_model
+    env_file:
+      - .env
+    depends_on:
+      - redis
+
+  ner_worker:
+    container_name: ner_worker
+    build:
+      context: .
+      dockerfile: ./shared_worker_library/Dockerfile.worker
+    command: >
+      celery -A shared_worker_library.worker.ner_worker worker -Q ner_model_queue -l info -E -n ner_model
     env_file:
       - .env
     depends_on:

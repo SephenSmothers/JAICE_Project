@@ -1,18 +1,16 @@
-from shared_worker_library.worker.relevance_model_worker import celery_app
+from shared_worker_library.worker.relevance_worker import celery_app
 from common.logger import get_logger
 from shared_worker_library.utils.task_definitions import (
     TaskType,
     EmailStatus,
     RelevanceModelResult,
 )
-from shared_worker_library.db_queries.relevance_queries import (
-    get_encrypted_emails,
-    update_staging_table,
-    update_staging_table_failure,
-)
+from shared_worker_library.db_queries.relevance_queries import update_staging_table
+from shared_worker_library.db_queries.std_queries import get_encrypted_emails, update_staging_table_failure
 from common.security import decrypt_token
 from typing import List, Dict
 import random
+from shared_worker_library.utils.to_bytes import to_bytes
 
 logging = get_logger()
 MAX_RETRIES = 3
@@ -69,42 +67,37 @@ def relevance_task(trace_id: str, row_ids: list, attempt: int = 1):
     logging.info(f"[{trace_id}] Relevance task completed successfully")
     return {"status": "success", "results": results}
 
+def decrypt_email_content(trace_id: str, encrypted_emails: List[Dict]) -> List[Dict]:
+    logging.info(f"[{trace_id}] Decrypting email content")
+    # This will need to be optimized to only create the necessary decrypted fields for the relevance model.
+    decrypted_emails = []
+    for email in encrypted_emails:
+        try:
+            decrypted_emails.append(
+                {
+                    "id": email["id"],
+                    "subject": decrypt_token(to_bytes(email["subject_enc"])),
+                    "sender": decrypt_token(to_bytes(email["sender_enc"])),
+                    "body": decrypt_token(to_bytes(email["body_enc"])),
+                }
+            )
+        except Exception as e:
+            logging.error(f"[{trace_id}] Error decrypting email ID {email['id']}: {e}")
+    return decrypted_emails
 
-def enqueue(trace_id: str, model_results: RelevanceModelResult, attempt: int):
-    logging.info(f"Splitting and enqueueing results for trace_id {trace_id}")
-    # This function sends tasks to the proper queues based on model results.
-    relevant_ids = [item["email_id"] for item in model_results.relevant]
-    retry_ids = [item["email_id"] for item in model_results.retry]
-    purge_ids = [item["email_id"] for item in model_results.purge]
-
-    # Enqueue relevant emails for classification model
-    if relevant_ids:
-        celery_app.send_task(
-            TaskType.CLASSIFICATION_MODEL.task_name,
-            args=[trace_id, relevant_ids],
-            queue=TaskType.CLASSIFICATION_MODEL.queue_name,
-        )
-
-    # Enqueue retry emails back to relevance model with incremented attempt
-    if retry_ids:
-        countdown = (2 ** (attempt - 1)) * 60
-        relevance_task.apply_async(
-            args=[trace_id, retry_ids, attempt + 1], countdown=countdown
-        )
-        return
-
-    # Log relevance task enqueueing summary
-    logging.info(
-        f"[{trace_id}] Enqueueing summary: Enqueued {len(relevant_ids)} relevant, {len(retry_ids)} retry, and {len(purge_ids)} purge emails"
+def normalized_emails_for_model(trace_id: str, emails: list[dict]) -> list[dict]:
+    logging.warning(
+        f"Normalizing emails for trace_id {trace_id}. Functionality not yet implemented."
     )
-
-    return {
-        "relevant": relevant_ids,
-        "retry": retry_ids,
-        "purge": purge_ids,
-        "attempt_next": attempt + 1 if retry_ids else attempt,
-    }
-
+    # All content for the row is pulled into the emails list. This will later be optimized to only pull necessary fields for the relevance model.
+    # {
+    #     "id",                     -> Generated for the staging table
+    #     "subject",                -> email subject
+    #     "sender",                 -> email sender
+    #     "body",                   -> email body content
+    # }
+    # For now, we just return the emails as-is.
+    return emails
 
 def run_relevance_model(trace_id: str, emails: list[dict]) -> RelevanceModelResult:
     logging.warning(
@@ -156,44 +149,37 @@ def run_relevance_model(trace_id: str, emails: list[dict]) -> RelevanceModelResu
 
     return RelevanceModelResult(relevant=relevant, retry=retry, purge=purge)
 
+def enqueue(trace_id: str, model_results: RelevanceModelResult, attempt: int):
+    logging.info(f"Splitting and enqueueing results for trace_id {trace_id}")
+    # This function sends tasks to the proper queues based on model results.
+    relevant_ids = [item["email_id"] for item in model_results.relevant]
+    retry_ids = [item["email_id"] for item in model_results.retry]
+    purge_ids = [item["email_id"] for item in model_results.purge]
 
-def normalized_emails_for_model(trace_id: str, emails: list[dict]) -> list[dict]:
-    logging.warning(
-        f"Normalizing emails for trace_id {trace_id}. Functionality not yet implemented."
+    # Enqueue relevant emails for classification model
+    if relevant_ids:
+        celery_app.send_task(
+            TaskType.NER_MODEL.task_name,
+            args=[trace_id, relevant_ids],
+            queue=TaskType.NER_MODEL.queue_name,
+        )
+
+    # Enqueue retry emails back to relevance model with incremented attempt
+    if retry_ids:
+        countdown = (2 ** (attempt - 1)) * 60
+        relevance_task.apply_async(
+            args=[trace_id, retry_ids, attempt + 1], countdown=countdown
+        )
+        return
+
+    # Log relevance task enqueueing summary
+    logging.info(
+        f"[{trace_id}] Enqueueing summary: Enqueued {len(relevant_ids)} relevant, {len(retry_ids)} retry, and {len(purge_ids)} purge emails"
     )
-    # All content for the row is pulled into the emails list. This will later be optimized to only pull necessary fields for the relevance model.
-    # {
-    #     "id",                     -> Generated for the staging table
-    #     "subject",                -> email subject
-    #     "sender",                 -> email sender
-    #     "body",                   -> email body content
-    # }
-    # For now, we just return the emails as-is.
-    return emails
 
-
-def decrypt_email_content(trace_id: str, encrypted_emails: List[Dict]) -> List[Dict]:
-    logging.info(f"[{trace_id}] Decrypting email content")
-    # This will need to be optimized to only create the necessary decrypted fields for the relevance model.
-    decrypted_emails = []
-    for email in encrypted_emails:
-        try:
-            decrypted_emails.append(
-                {
-                    "id": email["id"],
-                    "subject": decrypt_token(to_bytes(email["subject_enc"])),
-                    "sender": decrypt_token(to_bytes(email["sender_enc"])),
-                    "body": decrypt_token(to_bytes(email["body_enc"])),
-                }
-            )
-        except Exception as e:
-            logging.error(f"[{trace_id}] Error decrypting email ID {email['id']}: {e}")
-    return decrypted_emails
-
-
-def to_bytes(val):
-    if isinstance(val, memoryview):
-        return bytes(val)
-    if isinstance(val, str) and val.startswith("\\x"):
-        return bytes.fromhex(val[2:])
-    return val
+    return {
+        "relevant": relevant_ids,
+        "retry": retry_ids,
+        "purge": purge_ids,
+        "attempt_next": attempt + 1 if retry_ids else attempt,
+    }

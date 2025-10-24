@@ -5,7 +5,7 @@ from psycopg_pool import ConnectionPool
 logging = get_logger()
 _pool_lock = threading.Lock()
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = os.getenv("WORKER_DATABASE_URL")
 
 pool: ConnectionPool | None = None
 
@@ -21,7 +21,7 @@ def get_pool() -> ConnectionPool:
             pool = ConnectionPool(
                 conninfo=DATABASE_URL,
                 min_size=1,
-                max_size=10,
+                max_size=20,
                 max_lifetime=300,
                 max_idle=60,
             )
@@ -34,4 +34,6 @@ def get_connection():
     Gets a connection from the process-specific pool.
     """
     process_pool = get_pool()
-    return process_pool.connection()
+    conn = process_pool.getconn()
+    conn.prepare_threshold = 0
+    return conn

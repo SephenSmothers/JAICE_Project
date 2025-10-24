@@ -4,12 +4,11 @@ from dataclasses import dataclass
 import os, base64, time, requests, random, redis, uuid
 from shared_worker_library.worker.gmail_worker import celery_app
 from google.oauth2.credentials import Credentials
-from shared_worker_library.database import get_connection
 from common.security import encrypt_token, decrypt_token
 from googleapiclient.discovery import build
 from shared_worker_library.utils.task_definitions import TaskType, EmailStatus
 from common.logger import get_logger
-from shared_worker_library.db_queries.gmail_queries import get_refresh_token
+from shared_worker_library.db_queries.gmail_queries import get_refresh_token, insert_staging_records
 from enum import Enum
 
 logging = get_logger()
@@ -111,6 +110,9 @@ def fetch_content(
         f"[{trace_id}] fetch_content: start (batch={len(message_id_batch)}) user={uid}"
     )
 
+
+    # This needs cleaned up into clean try except blocks for each step.
+    # This also needs to be separated from the inital intake worker
     try:
         with user_lock(trace_id, uid, max_slots=2, ttl_sec=6):
             results = gmail_fetch_batch(trace_id, message_id_batch, access_token)
@@ -405,39 +407,6 @@ def write_to_staging(trace_id: str, encrypted_emails: List[Dict]) -> List[int]:
             exc_info=True,
         )
         raise
-
-
-def insert_staging_records(trace_id: str, encrypted_emails: List[Dict]) -> List[str]:
-    """
-    Writes a batch of emails into internal_staging.email_staging
-    and returns the inserted row IDs.
-    """
-    insert_sql = """
-        INSERT INTO internal_staging.email_staging (
-            id, user_id_enc, trace_id, provider, provider_message_id,
-            subject_enc, sender_enc, received_at_enc, body_enc, status
-        )
-        VALUES (
-            %(id)s, %(user_id_enc)s, %(trace_id)s, %(provider)s, %(provider_message_id)s,
-            %(subject_enc)s, %(sender_enc)s, %(received_at_enc)s, %(body_enc)s, %(status)s
-        )
-        RETURNING id;
-    """
-    with get_connection() as conn:  # NEW (safe)
-        conn.autocommit = True
-        with conn.cursor() as cur:
-            inserted_ids = []
-            for (
-                record
-            ) in encrypted_emails:  # Small batch (10) — INSERT row by row for clarity
-                cur.execute(insert_sql, record)
-                row = cur.fetchone()
-                inserted_ids.append(row[0])
-
-    logging.info(
-        f"[{trace_id}] staging: inserted {len(inserted_ids)} rows into email_staging"
-    )
-    return inserted_ids
 
 
 def enqueue_model_processing(trace_id: str, row_ids: List[str]) -> None:

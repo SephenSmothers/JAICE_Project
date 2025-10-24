@@ -14,7 +14,7 @@ load_dotenv()
 # Connection Pool Resource
 db_pool = None
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = os.getenv("CLIENT_DATABASE_URL")
 
 
 async def connect_to_db(max_retries: int = 5, retry_delay: int = 5):
