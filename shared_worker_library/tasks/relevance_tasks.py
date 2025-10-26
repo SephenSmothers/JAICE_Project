@@ -21,7 +21,7 @@ MODEL_CONFIDENCE_THRESHOLD = 0.8
     queue=TaskType.RELEVANCE_MODEL.queue_name, name=TaskType.RELEVANCE_MODEL.task_name
 )
 def relevance_task(trace_id: str, row_ids: list, attempt: int = 1):
-    logging.info(f"Starting relevance task for trace_id: {trace_id}")
+    logging.info(f"[{trace_id}] Starting relevance task. Attempt {attempt}")
 
     if attempt > MAX_RETRIES:
         logging.error(f"[{trace_id}] Exceeded maximum retries for relevance task.")
@@ -100,9 +100,7 @@ def normalized_emails_for_model(trace_id: str, emails: list[dict]) -> list[dict]
     return emails
 
 def run_relevance_model(trace_id: str, emails: list[dict]) -> RelevanceModelResult:
-    logging.warning(
-        f"Running relevance model for trace_id {trace_id}. Functionality not yet implemented."
-    )
+    logging.warning(f"[{trace_id}] Running relevance model. Functionality not yet implemented.")
     # This is where the relevance model logic will sit. It will always receive normalized emails that have been decrypted.
     # It should return a RelevanceModelResult object with relevant, retry, and purge lists.
     #
@@ -121,7 +119,6 @@ def run_relevance_model(trace_id: str, emails: list[dict]) -> RelevanceModelResu
 
     for index, email in enumerate(emails): #CHANGE TO for email in emails: WITH PROD LOGIC unless index is needed
         try:
-            logging.warning(f"Email ID {email['id']}: NEEDS IMPLEMENTED")
             # This is where the model should ingest the email data and produce a result (binary, confidence score, etc.)
             # This may be adjusted to account for the specific model architecture we choose. Binary, Confidence, Multi-class, etc.
             # But it should as it's final step produce three lists that sort the email ids into relevant, retry, and purge.
@@ -142,15 +139,13 @@ def run_relevance_model(trace_id: str, emails: list[dict]) -> RelevanceModelResu
             else:
                 purge.append({"email_id": email["id"]})
         except Exception as e:
-            logging.error(
-                f"Error processing email ID {email['id']} for trace_id {trace_id}: {e}"
-            )
+            logging.error(f"[{trace_id}] Error processing email: {e}")
             retry.append({"email_id": email["id"]})
 
     return RelevanceModelResult(relevant=relevant, retry=retry, purge=purge)
 
 def enqueue(trace_id: str, model_results: RelevanceModelResult, attempt: int):
-    logging.info(f"Splitting and enqueueing results for trace_id {trace_id}")
+    logging.info(f"[{trace_id}] Splitting and enqueueing results.")
     # This function sends tasks to the proper queues based on model results.
     relevant_ids = [item["email_id"] for item in model_results.relevant]
     retry_ids = [item["email_id"] for item in model_results.retry]
