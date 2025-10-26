@@ -12,26 +12,31 @@ def update_staging_table(trace_id: str, model_results: ClassificationModelResult
                 cur.execute(
                     "UPDATE internal_staging.email_staging SET app_stage = %s, status = %s WHERE id = %s",
                     (EmailStage.APPLIED.value, EmailStatus.AWAIT_TRANSFER.value, item["email_id"]),
+                    prepare=False
                 )
             for item in model_results.interview:
                 cur.execute(
                     "UPDATE internal_staging.email_staging SET app_stage = %s, status = %s WHERE id = %s",
                     (EmailStage.INTERVIEW.value, EmailStatus.AWAIT_TRANSFER.value, item["email_id"]),
+                    prepare=False
                 )
             for item in model_results.offer:
                 cur.execute(
                     "UPDATE internal_staging.email_staging SET app_stage = %s, status = %s WHERE id = %s",
                     (EmailStage.OFFER.value, EmailStatus.AWAIT_TRANSFER.value, item["email_id"]),
+                    prepare=False
                 )
             for item in model_results.accepted:
                 cur.execute(
                     "UPDATE internal_staging.email_staging SET app_stage = %s, status = %s WHERE id = %s",
                     (EmailStage.ACCEPTED.value, EmailStatus.AWAIT_TRANSFER.value, item["email_id"]),
+                    prepare=False
                 )
             for item in model_results.rejected:
                 cur.execute(
                     "UPDATE internal_staging.email_staging SET app_stage = %s, status = %s WHERE id = %s",
                     (EmailStage.REJECTED.value, EmailStatus.AWAIT_TRANSFER.value, item["email_id"]),
+                    prepare=False
                 )
         conn.commit()
     logging.info(f"[{trace_id}] Staging table updated. Job Stages set and AWAIT_TRANSFER status assigned.")

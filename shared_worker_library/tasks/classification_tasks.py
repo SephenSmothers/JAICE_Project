@@ -16,7 +16,7 @@ MAX_RETRIES = 3
     queue=TaskType.CLASSIFICATION_MODEL.queue_name, name=TaskType.CLASSIFICATION_MODEL.task_name
 )
 def classification_task(trace_id: str, row_ids: list, attempt: int = 1):
-    logging.info(f"Starting classification task for trace_id: {trace_id}")
+    logging.info(f"[{trace_id}] Starting classification task. Attempt {attempt}")
     
     if attempt > MAX_RETRIES:
         logging.error(f"[{trace_id}] Exceeded maximum retries for classification task.")
@@ -81,9 +81,7 @@ def decrypt_email_content(trace_id: str, encrypted_emails: List[Dict]) -> List[D
     return decrypted_emails
 
 def normalized_emails_for_model(trace_id: str, emails: list[dict]) -> list[dict]:
-    logging.warning(
-        f"Normalizing emails for trace_id {trace_id}. Functionality not yet implemented."
-    )
+    logging.warning(f"[{trace_id}] Normalizing emails for model. Functionality not yet implemented.")
     # All content for the row is pulled into the emails list. This will later be optimized to only pull necessary fields for the relevance model.
     # {
     #     "id",                     -> Generated for the staging table
@@ -95,9 +93,7 @@ def normalized_emails_for_model(trace_id: str, emails: list[dict]) -> list[dict]
     return emails
 
 def run_classification_model(trace_id: str, emails: list[dict]) -> ClassificationModelResult:
-    logging.warning(
-        f"Running classification model for trace_id {trace_id}. Functionality not yet implemented."
-    )
+    logging.warning(f"[{trace_id}] Running classification model. Functionality not yet implemented.")
     # This is where the classification model logic will sit. It will always receive normalized emails that have been decrypted.
     # It should return a ClassificationModelResult object with relevant, retry, and purge lists.
     #
@@ -116,7 +112,6 @@ def run_classification_model(trace_id: str, emails: list[dict]) -> Classificatio
 
     for index, email in enumerate(emails): #CHANGE TO for email in emails: WITH PROD LOGIC unless index is needed
         try:
-            logging.warning(f"Email ID {email['id']}: NEEDS IMPLEMENTED")
             # This is where the model should ingest the email data and produce a result (binary, confidence score, etc.)
             # This may be adjusted to account for the specific model architecture we choose. Binary, Confidence, Multi-class, etc.
             # But it should as it's final step produce three lists that sort the email ids into relevant, retry, and purge.
@@ -140,15 +135,13 @@ def run_classification_model(trace_id: str, emails: list[dict]) -> Classificatio
                 rejected.append({"email_id": email["id"]})
 
         except Exception as e:
-            logging.error(
-                f"Error processing email ID {email['id']} for trace_id {trace_id}: {e}"
-            )
+            logging.error(f"[{trace_id}] Error processing email: {e}")
             retry.append({"email_id": email["id"]})
 
     return ClassificationModelResult(applied=applied, interview=interview, offer=offer, accepted=accepted, rejected=rejected, retry=retry)
 
 def enqueue(trace_id: str, model_results: ClassificationModelResult, attempt: int):
-    logging.info(f"Splitting and enqueueing results for trace_id {trace_id}")
+    logging.info(f"[{trace_id}] Splitting and enqueueing results")
     # This function sends tasks to the proper queues based on model results.
     
     applied = [item["email_id"] for item in model_results.applied]
