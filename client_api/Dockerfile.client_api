@@ -7,9 +7,11 @@ COPY ./client_api ./client_api
 COPY ./common ./common
 
 # Install dependencies
-RUN pip install --no-cache-dir -r ./client_api/req.txt && \
-    pip install ./common && \
-    chown -R appuser:appgroup /app
+RUN pip install --no-cache-dir -r ./client_api/req.txt 
+# && \
+RUN pip install ./common 
+    # && \
+    #chown -R appuser:appgroup /app
 
 # Change ownership of the application directory to the non-root user
 USER appuser
