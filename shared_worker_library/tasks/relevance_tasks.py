@@ -1,3 +1,5 @@
+import json
+from shared_worker_library.tasks.OpenAI_tasks import call_openai_chat
 from shared_worker_library.worker.relevance_worker import celery_app
 from common.logger import get_logger
 from shared_worker_library.utils.task_definitions import (
@@ -99,50 +101,104 @@ def normalized_emails_for_model(trace_id: str, emails: list[dict]) -> list[dict]
     # For now, we just return the emails as-is.
     return emails
 
+
 def run_relevance_model(trace_id: str, emails: list[dict]) -> RelevanceModelResult:
-    logging.warning(f"[{trace_id}] Running relevance model. Functionality not yet implemented.")
-    # This is where the relevance model logic will sit. It will always receive normalized emails that have been decrypted.
-    # It should return a RelevanceModelResult object with relevant, retry, and purge lists.
-    #
-    # ITS IMPORTANT THAT WE ONLY RETURN THE ROW IDS IN THE RESULT OBJECT TO MINIMIZE DATA TRANSFER.
-    #
-    # TODO: Implement the relevance model logic here
-    #
-    # The return value should sort the email id's emails["id"] into relevant, retry, and purge lists.
-    # relevant (high confidence scores this marks the email as relevant to our applicaitons needs and sends it to the next model layer)
-    # retry (we want this email to be re-processed -> new db pull, normalization, decryption, model, db update)
-    # purge (low confidence scores -> this marks the email as not relevant in the db and prevents it from hitting our next layers)
+    logging.info(f"[{trace_id}] Running relevance model via OpenAI relevance classifier.")
 
-    relevant = []
-    retry = []
-    purge = []
+    relevant, retry, purge = [], [], []
 
-    for index, email in enumerate(emails): #CHANGE TO for email in emails: WITH PROD LOGIC unless index is needed
+    for email in emails:
         try:
-            # This is where the model should ingest the email data and produce a result (binary, confidence score, etc.)
-            # This may be adjusted to account for the specific model architecture we choose. Binary, Confidence, Multi-class, etc.
-            # But it should as it's final step produce three lists that sort the email ids into relevant, retry, and purge.
-            # For now, we simulate model behavior with a placeholder confidence score.
-            
-            # ----- Random sequencing for stress testing
-            if index == 0: # force first email to always fail (testing retry logic)
-                raise RuntimeError("Simulated model processing error for stress testing.")
-            
-            if random.random() < 0.02: # random chance of failure for stress testing
-                raise RuntimeError("Simulated model processing error for stress testing.")
-            
-            model_score = random.uniform(0.7, 0.9) # random confidence score for stress testing
-            # ----- Stress test logic ends here
-            
-            if model_score >= MODEL_CONFIDENCE_THRESHOLD:
+            subject = email.get("subject", "")
+            body = email.get("body", "")
+
+            messages = [
+                {
+                    "role": "system",
+                    "content": "You are a classifier that inspects an email and decides whether it is job-related."
+                },
+                {
+                    "role": "user",
+                    "content": f"Here is the email:\nSubject: {subject}\nBody: {body}\n\n"
+                               "Output exactly one JSON object with keys:\n"
+                               "  - job_related (boolean)\n"
+                               "  - reason (short string)\n"
+                               "  - confidence (0-1 float)\n\n"
+                               "Example:\n"
+                               '{"job_related": true, "reason": "mentions \'resume\' and \'interview\'", "confidence": 0.95}'
+                }
+            ]
+
+            result = call_openai_chat(
+                model="gpt-4o-mini",  # or whichever model you’re using
+                messages=messages,
+                max_tokens=128,
+                temperature=0.0
+            )
+
+            text = result["raw"].strip()
+            parsed = json.loads(text)
+
+            if parsed.get("job_related") and parsed.get("confidence", 0) >= 0.7:
                 relevant.append({"email_id": email["id"]})
-            else:
+            elif parsed.get("confidence", 0) < 0.4:
                 purge.append({"email_id": email["id"]})
+            else:
+                retry.append({"email_id": email["id"]})
+
+        except json.JSONDecodeError:
+            logging.error(f"[{trace_id}] JSON parse error for email ID {email.get('id')}")
+            retry.append({"email_id": email["id"]})
         except Exception as e:
-            logging.error(f"[{trace_id}] Error processing email: {e}")
+            logging.error(f"[{trace_id}] OpenAI relevance model error: {e}")
             retry.append({"email_id": email["id"]})
 
     return RelevanceModelResult(relevant=relevant, retry=retry, purge=purge)
+
+# def run_relevance_model(trace_id: str, emails: list[dict]) -> RelevanceModelResult:
+#     logging.warning(f"[{trace_id}] Running relevance model. Functionality not yet implemented.")
+#     # This is where the relevance model logic will sit. It will always receive normalized emails that have been decrypted.
+#     # It should return a RelevanceModelResult object with relevant, retry, and purge lists.
+#     #
+#     # ITS IMPORTANT THAT WE ONLY RETURN THE ROW IDS IN THE RESULT OBJECT TO MINIMIZE DATA TRANSFER.
+#     #
+#     # TODO: Implement the relevance model logic here
+#     #
+#     # The return value should sort the email id's emails["id"] into relevant, retry, and purge lists.
+#     # relevant (high confidence scores this marks the email as relevant to our applicaitons needs and sends it to the next model layer)
+#     # retry (we want this email to be re-processed -> new db pull, normalization, decryption, model, db update)
+#     # purge (low confidence scores -> this marks the email as not relevant in the db and prevents it from hitting our next layers)
+
+#     relevant = []
+#     retry = []
+#     purge = []
+
+#     for index, email in enumerate(emails): #CHANGE TO for email in emails: WITH PROD LOGIC unless index is needed
+#         try:
+#             # This is where the model should ingest the email data and produce a result (binary, confidence score, etc.)
+#             # This may be adjusted to account for the specific model architecture we choose. Binary, Confidence, Multi-class, etc.
+#             # But it should as it's final step produce three lists that sort the email ids into relevant, retry, and purge.
+#             # For now, we simulate model behavior with a placeholder confidence score.
+            
+#             # ----- Random sequencing for stress testing
+#             if index == 0: # force first email to always fail (testing retry logic)
+#                 raise RuntimeError("Simulated model processing error for stress testing.")
+            
+#             if random.random() < 0.02: # random chance of failure for stress testing
+#                 raise RuntimeError("Simulated model processing error for stress testing.")
+            
+#             model_score = random.uniform(0.7, 0.9) # random confidence score for stress testing
+#             # ----- Stress test logic ends here
+            
+#             if model_score >= MODEL_CONFIDENCE_THRESHOLD:
+#                 relevant.append({"email_id": email["id"]})
+#             else:
+#                 purge.append({"email_id": email["id"]})
+#         except Exception as e:
+#             logging.error(f"[{trace_id}] Error processing email: {e}")
+#             retry.append({"email_id": email["id"]})
+
+#     return RelevanceModelResult(relevant=relevant, retry=retry, purge=purge)
 
 def enqueue(trace_id: str, model_results: RelevanceModelResult, attempt: int):
     logging.info(f"[{trace_id}] Splitting and enqueueing results.")
