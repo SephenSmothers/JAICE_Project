@@ -54,6 +54,12 @@ export function JobCard({
     ...(isOpen ? { transform: "rotate(180deg)" } : {}),
   };
 
+  // open email in new window
+  const openMessage = (messageId: string): void => {
+    const url = `https://mail.google.com/mail/u/0/#inbox/${messageId}`;
+    window.open(url, "_blank");
+  };
+
   // These are added here to ensure there is no conflict with commits
   //    --color-card-bg: #1D1B20;
   //    --color-card-bg-rgb: 29, 27, 32;
@@ -146,9 +152,27 @@ export function JobCard({
           <div className="w-99/100 border-b my-2" />
           <div className="flex flex-col text-left w-full gap-1">
             <small>Small Startup</small>
-            <small>Jan 30th 2025</small>
-            <a href="#">App Link</a>
             <small>Recruiter</small>
+            <a 
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                openMessage(job.id);
+              }}
+                className="hover:underline text-sm cursor-pointer"
+                style={{
+                  color: 'var(--color-blue-5)',
+                  transition: 'color 0.25s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'var(--color-blue-4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--color-blue-5)';
+                }}
+              >
+              View Email
+            </a>
           </div>
         </>
       ) : null}
