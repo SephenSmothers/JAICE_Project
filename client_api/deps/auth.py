@@ -5,9 +5,6 @@ from client_api.services.firebase_admin import verify_id_token
 from common.logger import get_logger
 logging = get_logger()
 
-from utils.logger import get_logger
-logging = get_logger()
-
 # Security scheme for HTTP Bearer authentication
 bearer = HTTPBearer(auto_error=False)
 
