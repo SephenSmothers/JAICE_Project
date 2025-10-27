@@ -1,15 +1,135 @@
 // import { localfiles } from "@/directory/path/to/localimport";
 
+
 import { auth} from "@/global-services/firebase";
 import Button from "@/global-components/button";
 import { deleteCurrentUser } from "@/global-services/auth";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { api } from "@/global-services/api";
+import { setGmailConsentGranted } from "@/global-services/auth";
+import { googleSignIn } from "@/global-services/auth";
+// gains consent and updates the db accordingly
+async function connectGmailAPI() 
+{
+  try
+  {
+    console.log("Starting Gmail connection check...");
+    
+    // first check if already connected
+    console.log("Checking server-side Gmail consent status...");
+    const response = await api("/api/auth/gmail-consent-status");
+    console.log("Server response:", response);
 
+    if (response.isConnected) 
+    {
+      setGmailConsentGranted();
+
+      try 
+      {
+        const testResponse = await api("/gmail/messages?maxResults=1");
+        console.log("Gmail API test successful:", testResponse);
+
+        return { success: true, message: "Gmail already connected and working" };
+
+      } catch (testError) {
+        console.error("Gmail consent granted but API call failed:", testError);
+        return { success: false, message: "Gmail consent granted but unable to read emails" };
+      }
+    } 
+    else 
+    {
+      // use pop up flow
+      console.log("Gmail not connected, starting popup OAuth flow...");
+      
+      try {
+        await googleSignIn();
+        await api("/api/auth/setup-rls-session", { method: 'POST' });
+        
+        console.log("Popup OAuth completed, Gmail should now be connected");
+        return { success: true, message: "Gmail connected successfully via popup" };
+        
+      } catch (oauthError) {
+        console.error("Popup OAuth failed:", oauthError);
+        return { success: false, message: `OAuth popup failed: ${oauthError}` };
+      }
+    }
+
+  } catch (error) {
+    console.error("Error in connectGmailAPI:", error);
+    return { success: false, message: `Error connecting to Gmail: ${error}` };
+  }
+}
 
 export function AccountPage() 
 {
-const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [gmailConnected, setGmailConnected] = useState(false);
+  const [gmailBusy, setGmailBusy] = useState(false);
+
+  // check if gmail is already connected
+  useEffect(() => {
+    checkGmailStatus();
+  }, []);
+
+
+  async function checkGmailStatus() 
+  {
+    try 
+    {
+      const testResult = await api("/gmail/messages?maxResults=1");
+        
+      // If we can fetch emails, Gmail is connected
+      if (testResult && testResult.messages) 
+      {
+        setGmailConnected(true);
+        setError(null);
+        console.log("Gmail is properly connected - can fetch emails");
+      } else {
+        setGmailConnected(false);
+        setError(null);
+        console.log("Gmail API response invalid");
+      }
+
+    } catch (testError) {
+      console.error("Gmail API test failed:", testError);
+      setGmailConnected(false);
+        
+      // check if its an auth error vs other error
+      if (testError && testError.toString().includes('401')) 
+      {
+        setError("Gmail not connected - authentication required");
+      } else {
+        setError("Gmail connection test failed");
+      }
+    }
+  }
+
+  async function handleGmailConnection() 
+  {
+    setGmailBusy(true);
+    setError(null);
+
+    const result = await connectGmailAPI();
+    console.log("Gmail connection result:", result);
+
+    if (result.success) 
+    {
+      console.log("Gmail connection successful:", result.message);
+      setError(null);
+      
+      // refresh status to double check
+      setTimeout(() => {
+        checkGmailStatus();
+      }, 1000);
+      
+    } else {
+      console.error("Gmail connection failed:", result.message);
+      setError(result.message);
+      setGmailConnected(false);
+    }
+    setGmailBusy(false);
+  }
 
   async function handleDelete() {
     setError(null);
@@ -138,13 +258,25 @@ const [busy, setBusy] = useState(false);
             <hr className="w-full border-t-2 border-gray-400 my-2" />
 
             {/* email */}
-            <div className="my-6 text-left">
-              <button
-                onClick={() => console.log("Manage Linked Emails clicked")}
+             <div className="my-6 text-left">
+              <h3 className="text-lg font-medium text-gray-300 mb-2">
+                Gmail Integration
+              </h3>
+              <p className="text-sm text-gray-400 mb-4">
+                Connect your Gmail account to allow email parsing and analysis.
+              </p>
+              <Button 
+                onClick={gmailBusy || gmailConnected ? undefined : handleGmailConnection}
               >
-                Manage Linked Emails
-              </button>
-            </div>
+                {gmailBusy ? "Connecting..." : gmailConnected ? "Connected" : "Connect Gmail"}
+              </Button>
+              {error && (
+                <p className="mt-2 text-sm text-red-400" role="alert">
+                  {error}
+                </p>
+              )}
+            </div> 
+         
 
             {/* password */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-6">
@@ -202,7 +334,13 @@ const [busy, setBusy] = useState(false);
                 className="red"
               >
                 {busy ? "Deleting..." : "Delete Account"}
+                {busy ? "Deleting..." : "Delete Account"}
               </button>
+              {error && (
+                <p className="mt-2 text-sm text-red-400" role="alert">
+                  {error}
+                </p>
+              )}
               {error && (
                 <p className="mt-2 text-sm text-red-400" role="alert">
                   {error}

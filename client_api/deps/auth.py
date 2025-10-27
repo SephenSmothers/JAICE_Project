@@ -5,6 +5,9 @@ from client_api.services.firebase_admin import verify_id_token
 from common.logger import get_logger
 logging = get_logger()
 
+from utils.logger import get_logger
+logging = get_logger()
+
 # Security scheme for HTTP Bearer authentication
 bearer = HTTPBearer(auto_error=False)
 
@@ -23,7 +26,6 @@ async def get_current_user(creds: HTTPAuthorizationCredentials = Depends(bearer)
         # If verification fails, raise a 401 Unauthorized error
         logging.error(f"Token verification failed: {e}")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid/expired token")
-
 
 async def get_user_from_token_query(token: str):
     if not token:
