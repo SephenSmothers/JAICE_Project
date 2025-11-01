@@ -2,7 +2,6 @@ import math
 import re
 from typing import Dict, Set, Tuple, List
 import pandas as pd
-import spacy
 from bs4 import BeautifulSoup
 from common.logger import get_logger
 logging = get_logger()
@@ -190,11 +189,27 @@ PATTERNS: Dict[str, re.Pattern] = {
     "UUID": re.compile(
         r"\b[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}\b"
     ),
+    "PHONE": re.compile(
+        r"""
+        \b
+        (?:
+            (?:\+?1[-.\s]?)?                          # optional country code
+            (?:\([2-9]\d{2}\)|[2-9]\d{2})             # area code
+            [-.\s]?
+            \d{3}                                      # exchange
+            [-.\s]?
+            \d{4}                                      # subscriber number
+        )
+        \b
+        """,
+        re.VERBOSE,
+    ),
 }
 
 ORDER = [
     "EMAIL",
     "URL",
+    "PHONE",
     "IPV4",
     "IPV6",
     "MAC",
@@ -225,21 +240,11 @@ def _redact_pii_regex(text: str) -> Tuple[str, Dict[str, int]]:
 
 
 def layer_one_pii_redaction(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]]:
-    logging.info("Redacting Basic PII with regex Patterns...")
     global_counts: Dict[str, int] = {k: 0 for k in PATTERNS.keys()}
 
-    redacted_subjects = []
     redacted_bodies = []
 
     for row in df.itertuples():
-        sub_text = getattr(row, "sub", "") or ""
-        red_sub, sub_counts = _redact_pii_regex(sub_text)
-        redacted_subjects.append(red_sub)
-
-        # accumulate sub counts
-        for k, v in sub_counts.items():
-            global_counts[k] += v
-
         # ---- BODY ----
         body_text = getattr(row, "body", "") or ""
         red_body, body_counts = _redact_pii_regex(body_text)
@@ -251,9 +256,7 @@ def layer_one_pii_redaction(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, i
 
     # build new output df
     new_df = df.copy()
-    new_df["sub"] = redacted_subjects
     new_df["body"] = redacted_bodies
-    logging.info("Completed Layer 1 PII Redaction.")
     return new_df, global_counts
 
 
@@ -283,45 +286,18 @@ LAYER1_PLACEHOLDERS: Set[str] = {
 
 
 def layer_two_ner_redaction(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]]:
-    logging.info("Redacting PII with spaCy NER")
-    try:
-        spacy.require_gpu()
-        logging.info("Using GPU for spaCy NER.")
-    except Exception:
-        logging.info("GPU not available for spaCy. Using CPU.")
-    nlp_lg = spacy.load("en_core_web_lg")
+    from relevance.relevance_worker import NLP_MODEL
+
+    if NLP_MODEL is None:
+        raise RuntimeError("NLP_MODEL is not loaded. Ensure the model is loaded before calling this function.")
+    
+    nlp_lg = NLP_MODEL
 
     ner_global_counts = {k: 0 for k in NER_TARGETS.keys()}
-    subjects: List[str] = df["sub"].tolist()
     bodies: List[str] = df["body"].tolist()
 
-    new_subs: List[str] = []
     new_bodies: List[str] = []
 
-    logging.info(f"Processing {len(subjects)} subjects with nlp.pipe()...")
-    for doc in nlp_lg.pipe(subjects, batch_size=150):
-        redacted_text = doc.text
-        doc_counts = {k: 0 for k in NER_TARGETS.keys()}
-
-        for ent in reversed(doc.ents):
-            if ent.label_ in NER_TARGETS:
-                if ent.text in LAYER1_PLACEHOLDERS:
-                    continue
-
-                placeholder = NER_TARGETS[ent.label_]
-
-                redacted_text = (
-                    redacted_text[: ent.start_char]
-                    + placeholder
-                    + redacted_text[ent.end_char :]
-                )
-                doc_counts[ent.label_] += 1
-
-        new_subs.append(redacted_text)
-        for k, v in doc_counts.items():
-            ner_global_counts[k] += v
-
-    logging.info(f"Processing {len(bodies)} bodies with nlp.pipe()...")
     for doc in nlp_lg.pipe(bodies, batch_size=150):
         redacted_text = doc.text
         doc_counts = {k: 0 for k in NER_TARGETS.keys()}
@@ -344,9 +320,7 @@ def layer_two_ner_redaction(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, i
             ner_global_counts[k] += v
 
     new_df = df.copy()
-    new_df["sub"] = new_subs
     new_df["body"] = new_bodies
-    logging.info("Completed Layer 2 NER Redaction.")
     return new_df, ner_global_counts
 
 
@@ -470,6 +444,7 @@ def redact_keys(text: str) -> Tuple[str, Dict[str, int]]:
             counts["[SECRET]"] += 1
 
     def _mask_lhs(m: re.Match) -> str:
+        counts["[SECRET]"] += 1
         trail = m.group("trail") or ""
         return f"[SECRET] = [SECRET]{trail}"
 
@@ -479,15 +454,8 @@ def redact_keys(text: str) -> Tuple[str, Dict[str, int]]:
 
 
 def layer_three_key_redaction(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]]:
-    logging.info("Redacting API Keys and Secrets with regex patterns")
     key_counts: Dict[str, int] = {k: 0 for k in KEY_REGEX_PATTERNS.keys()}
     key_counts["[SECRET]"] = 0
-
-    sub_results = df["sub"].fillna("").apply(redact_keys)
-    key_sub = [r[0] for r in sub_results]
-    for _, c in sub_results:
-        for k, v in c.items():
-            key_counts[k] += v
 
     body_results = df["body"].fillna("").apply(redact_keys)
     key_body = [r[0] for r in body_results]
@@ -496,9 +464,7 @@ def layer_three_key_redaction(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str,
             key_counts[k] += v
 
     df2 = df.copy()
-    df2["sub"] = key_sub
     df2["body"] = key_body
-    logging.info("Completed Layer 3 Key Redaction.")
     return df2, key_counts
 
 
@@ -510,7 +476,6 @@ MONEY_PATTERN = re.compile(
 
 
 def layer_money_redaction(df: pd.DataFrame) -> Tuple[pd.DataFrame, int]:
-    logging.info("Redacting MONEY amounts with regex patterns")
     money_counts = {"MONEY": 0}
 
     def _red_money(text: str):
@@ -523,9 +488,7 @@ def layer_money_redaction(df: pd.DataFrame) -> Tuple[pd.DataFrame, int]:
         return new_text
 
     dfm = df.copy()
-    dfm["sub"] = dfm["sub"].fillna("").apply(_red_money)
     dfm["body"] = dfm["body"].fillna("").apply(_red_money)
-    logging.info("Completed MONEY Redaction.")
     return dfm, money_counts["MONEY"]
 
 
@@ -572,19 +535,13 @@ def _red_num(text: str):
 
 
 def layer_num_redaction(df: pd.DataFrame) -> Tuple[pd.DataFrame, int]:
-    logging.info("Redacting NUMBERS with regex patterns")
     number_counts = {"NUM": 0}
     dfn = df.copy()
-
-    res_sub = dfn["sub"].fillna("").apply(_red_num)
-    dfn["sub"] = res_sub.apply(lambda x: x[0])
-    number_counts["NUM"] += sum(x[1] for x in res_sub)
 
     res_body = dfn["body"].fillna("").apply(_red_num)
     dfn["body"] = res_body.apply(lambda x: x[0])
     number_counts["NUM"] += sum(x[1] for x in res_body)
 
-    logging.info("Completed NUM Redaction.")
     return dfn, number_counts["NUM"]
 
 
@@ -626,19 +583,13 @@ def _red_token(text: str):
 
 
 def layer_five_token_redaction(df: pd.DataFrame) -> Tuple[pd.DataFrame, int]:
-    logging.info("Redacting MIXED TOKENS with regex patterns")
     token_count = 0
     df5 = df.copy()
-
-    res_sub = df5["sub"].fillna("").apply(_red_token)
-    df5["sub"] = res_sub.apply(lambda x: x[0])
-    token_count += sum(x[1] for x in res_sub)
 
     res_body = df5["body"].fillna("").apply(_red_token)
     df5["body"] = res_body.apply(lambda x: x[0])
     token_count += sum(x[1] for x in res_body)
 
-    logging.info("Completed MIXED TOKENS Redaction.")
     return df5, token_count
 
 
@@ -697,6 +648,12 @@ def _merge_counts(final_counts: Dict[str, int], layer_counts: Dict[str, int]) ->
 # Full redaction pipeline
 def strip_pii(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]]:
     logging.info("Starting PII Stripping Process.")
+    
+    required_cols = ['body']
+    missing_cols = [col for col in required_cols if col not in df.columns]
+    if missing_cols:
+        raise ValueError(f"Input DataFrame is missing required columns: {missing_cols}")
+    
     final_counts = _init_final_counts()
 
     df1, counts1 = layer_one_pii_redaction(df)
@@ -715,6 +672,5 @@ def strip_pii(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]]:
     _merge_counts(final_counts, {"TOKEN": token_count})
 
     df5['body'] = df5['body'].apply(normalize_text)
-    df5['sub'] = df5['sub'].apply(normalize_text)
     logging.info("Completed PII Stripping Process and text normalization.")
     return df5, final_counts

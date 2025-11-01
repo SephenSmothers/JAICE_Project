@@ -24,6 +24,11 @@ MODEL_CONFIDENCE_THRESHOLD = 0.8
     queue=TaskType.RELEVANCE_MODEL.queue_name, name=TaskType.RELEVANCE_MODEL.task_name
 )
 def relevance_task(trace_id: str, row_ids: list, attempt: int = 1):
+    '''
+    This is the main task function for processing email relevance.
+    
+    We fetch the emails, decrypt them, redact PII and normalize the text, run the relevance model, and update the staging table, then enqueue for the next model.
+    '''
     logging.info(f"[{trace_id}] Starting relevance task. Attempt {attempt}")
 
     if attempt > MAX_RETRIES:
@@ -79,21 +84,19 @@ def decrypt_email_content(trace_id: str, encrypted_emails: List[Dict]) -> List[D
             decrypted_emails.append(
                 {
                     "id": email["id"],
-                    "subject": decrypt_token(to_bytes(email["subject_enc"])),
-                    "sender": decrypt_token(to_bytes(email["sender_enc"])),
                     "body": decrypt_token(to_bytes(email["body_enc"])),
                 }
             )
         except Exception as e:
             logging.error(f"[{trace_id}] Error decrypting email ID {email['id']}: {e}")
+            
     return decrypted_emails
 
 def normalized_emails_for_model(trace_id: str, emails: list[dict]) -> pd.DataFrame:
     logging.info(
-        f"Normalizing emails for trace_id {trace_id}. Functionality not yet implemented."
+        f"Normalizing emails for trace_id {trace_id}. Total emails: {len(emails)}"
     )
     df = pd.DataFrame(emails)
-    df = df.rename(columns={"subject": "sub"}) #rename for pii redaction pipeline.
     df_normalized, redaction_counts = strip_pii(df)
     logging.info(f"[{trace_id}] PII redaction counts: {redaction_counts}")
     return df_normalized
@@ -106,14 +109,14 @@ def run_relevance_model(trace_id: str, emails: pd.DataFrame) -> RelevanceModelRe
     purge = []
     
     try:
-        data = predict(emails) # all or nothing predictions if one fails all fail and are marked for retry.
+        data = predict(emails)
         logging.info(f"[{trace_id}] Relevance model predictions {data[['id', 'job_probability', 'prediction']]}")
         relevant.extend(data.loc[data['prediction'] == 1, 'id'].tolist())
         purge.extend(data.loc[data['prediction'] == 0, 'id'].tolist())
     
     except Exception as e:
         logging.error(f"[{trace_id}] Error processing email: {e}")
-        retry.extend(data['id'].tolist())
+        retry.extend(emails['id'].tolist())
         relevant = []
         purge = []
 
@@ -140,7 +143,6 @@ def enqueue(trace_id: str, model_results: RelevanceModelResult, attempt: int):
         relevance_task.apply_async(
             args=[trace_id, retry_ids, attempt + 1], countdown=countdown
         )
-        return
 
     # Log relevance task enqueueing summary
     logging.info(

@@ -25,4 +25,4 @@ RUN python -m spacy download en_core_web_lg
 RUN chown -R appuser:appgroup /app
 USER appuser
 
-CMD ["celery", "-A", "relevance.relevance_worker", "worker", "-Q", "relevance_model_queue", "-l", "info", "-E", "-n", "relevance_model", "-c", "15"]
+CMD ["celery", "-A", "relevance.relevance_worker", "worker", "-Q", "relevance_model_queue", "-l", "info", "-E", "-n", "relevance_model", "-c", "3"]
