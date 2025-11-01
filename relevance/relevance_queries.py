@@ -9,24 +9,27 @@ def update_staging_table(trace_id: str, model_results: RelevanceModelResult):
     logging.info(f"[{trace_id}] Updating staging table")
     with get_connection() as conn:
         with conn.cursor() as cur:
-            for item in model_results.relevant:
+            for email_id in model_results.relevant:
                 cur.execute(
                     "UPDATE internal_staging.email_staging SET status = %s WHERE id = %s",
-                    (EmailStatus.AWAIT_CLASSIFICATION.value, item["email_id"]),
+                    (EmailStatus.AWAIT_CLASSIFICATION.value, str(email_id)),
                     prepare=False
                 )
-            for item in model_results.retry:
+                
+            for email_id in model_results.retry:
                 cur.execute(
                     "UPDATE internal_staging.email_staging SET status = %s WHERE id = %s",
-                    (EmailStatus.RETRY.value, item["email_id"]),
+                    (EmailStatus.RETRY.value, str(email_id)),
                     prepare=False
                 )
-            for item in model_results.purge:
+                
+            for email_id in model_results.purge:
                 cur.execute(
                     "UPDATE internal_staging.email_staging SET status = %s WHERE id = %s",
-                    (EmailStatus.PURGE.value, item["email_id"]),
+                    (EmailStatus.PURGE.value, str(email_id)),
                     prepare=False
                 )
+                
         conn.commit()
     logging.info(f"[{trace_id}] Staging table updated")
     return {"status": "updated"}

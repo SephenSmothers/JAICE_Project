@@ -1,16 +1,19 @@
-from shared_worker_library.worker.relevance_worker import celery_app
+from relevance.relevance_worker import celery_app
 from common.logger import get_logger
 from shared_worker_library.utils.task_definitions import (
     TaskType,
     EmailStatus,
     RelevanceModelResult,
 )
-from shared_worker_library.db_queries.relevance_queries import update_staging_table
+from relevance.relevance_queries import update_staging_table
 from shared_worker_library.db_queries.std_queries import get_encrypted_emails, update_staging_table_failure
 from common.security import decrypt_token
 from typing import List, Dict
 import random
 from shared_worker_library.utils.to_bytes import to_bytes
+import pandas as pd
+from relevance.relevance_norm import strip_pii
+from relevance.relevance_model import predict
 
 logging = get_logger()
 MAX_RETRIES = 3
@@ -65,7 +68,7 @@ def relevance_task(trace_id: str, row_ids: list, attempt: int = 1):
         return {"status": "failure", "error": str(e)}
 
     logging.info(f"[{trace_id}] Relevance task completed successfully")
-    return {"status": "success", "results": results}
+    return {"status": "success", "results": f"Relevant Count: {len(model_results.relevant)}, Retry Count: {len(model_results.retry)}, Purge Count: {len(model_results.purge)}"}
 
 def decrypt_email_content(trace_id: str, encrypted_emails: List[Dict]) -> List[Dict]:
     logging.info(f"[{trace_id}] Decrypting email content")
@@ -85,71 +88,43 @@ def decrypt_email_content(trace_id: str, encrypted_emails: List[Dict]) -> List[D
             logging.error(f"[{trace_id}] Error decrypting email ID {email['id']}: {e}")
     return decrypted_emails
 
-def normalized_emails_for_model(trace_id: str, emails: list[dict]) -> list[dict]:
-    logging.warning(
+def normalized_emails_for_model(trace_id: str, emails: list[dict]) -> pd.DataFrame:
+    logging.info(
         f"Normalizing emails for trace_id {trace_id}. Functionality not yet implemented."
     )
-    # All content for the row is pulled into the emails list. This will later be optimized to only pull necessary fields for the relevance model.
-    # {
-    #     "id",                     -> Generated for the staging table
-    #     "subject",                -> email subject
-    #     "sender",                 -> email sender
-    #     "body",                   -> email body content
-    # }
-    # For now, we just return the emails as-is.
-    return emails
+    df = pd.DataFrame(emails)
+    df = df.rename(columns={"subject": "sub"}) #rename for pii redaction pipeline.
+    df_normalized, redaction_counts = strip_pii(df)
+    logging.info(f"[{trace_id}] PII redaction counts: {redaction_counts}")
+    return df_normalized
 
-def run_relevance_model(trace_id: str, emails: list[dict]) -> RelevanceModelResult:
-    logging.warning(f"[{trace_id}] Running relevance model. Functionality not yet implemented.")
-    # This is where the relevance model logic will sit. It will always receive normalized emails that have been decrypted.
-    # It should return a RelevanceModelResult object with relevant, retry, and purge lists.
-    #
-    # ITS IMPORTANT THAT WE ONLY RETURN THE ROW IDS IN THE RESULT OBJECT TO MINIMIZE DATA TRANSFER.
-    #
-    # TODO: Implement the relevance model logic here
-    #
-    # The return value should sort the email id's emails["id"] into relevant, retry, and purge lists.
-    # relevant (high confidence scores this marks the email as relevant to our applicaitons needs and sends it to the next model layer)
-    # retry (we want this email to be re-processed -> new db pull, normalization, decryption, model, db update)
-    # purge (low confidence scores -> this marks the email as not relevant in the db and prevents it from hitting our next layers)
-
+def run_relevance_model(trace_id: str, emails: pd.DataFrame) -> RelevanceModelResult:
+    logging.info(f"[{trace_id}] Running relevance model.")
+    
     relevant = []
     retry = []
     purge = []
-
-    for index, email in enumerate(emails): #CHANGE TO for email in emails: WITH PROD LOGIC unless index is needed
-        try:
-            # This is where the model should ingest the email data and produce a result (binary, confidence score, etc.)
-            # This may be adjusted to account for the specific model architecture we choose. Binary, Confidence, Multi-class, etc.
-            # But it should as it's final step produce three lists that sort the email ids into relevant, retry, and purge.
-            # For now, we simulate model behavior with a placeholder confidence score.
-            
-            # ----- Random sequencing for stress testing
-            if index == 0: # force first email to always fail (testing retry logic)
-                raise RuntimeError("Simulated model processing error for stress testing.")
-            
-            if random.random() < 0.02: # random chance of failure for stress testing
-                raise RuntimeError("Simulated model processing error for stress testing.")
-            
-            model_score = random.uniform(0.7, 0.9) # random confidence score for stress testing
-            # ----- Stress test logic ends here
-            
-            if model_score >= MODEL_CONFIDENCE_THRESHOLD:
-                relevant.append({"email_id": email["id"]})
-            else:
-                purge.append({"email_id": email["id"]})
-        except Exception as e:
-            logging.error(f"[{trace_id}] Error processing email: {e}")
-            retry.append({"email_id": email["id"]})
+    
+    try:
+        data = predict(emails) # all or nothing predictions if one fails all fail and are marked for retry.
+        logging.info(f"[{trace_id}] Relevance model predictions {data[['id', 'job_probability', 'prediction']]}")
+        relevant.extend(data.loc[data['prediction'] == 1, 'id'].tolist())
+        purge.extend(data.loc[data['prediction'] == 0, 'id'].tolist())
+    
+    except Exception as e:
+        logging.error(f"[{trace_id}] Error processing email: {e}")
+        retry.extend(data['id'].tolist())
+        relevant = []
+        purge = []
 
     return RelevanceModelResult(relevant=relevant, retry=retry, purge=purge)
 
 def enqueue(trace_id: str, model_results: RelevanceModelResult, attempt: int):
     logging.info(f"[{trace_id}] Splitting and enqueueing results.")
     # This function sends tasks to the proper queues based on model results.
-    relevant_ids = [item["email_id"] for item in model_results.relevant]
-    retry_ids = [item["email_id"] for item in model_results.retry]
-    purge_ids = [item["email_id"] for item in model_results.purge]
+    relevant_ids = [str(email_id) for email_id in model_results.relevant]
+    retry_ids = [str(email_id) for email_id in model_results.retry]
+    purge_ids = [str(email_id) for email_id in model_results.purge]
 
     # Enqueue relevant emails for classification model
     if relevant_ids:

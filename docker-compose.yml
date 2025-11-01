@@ -59,11 +59,14 @@ services:
     container_name: relevance_worker
     build:
       context: .
-      dockerfile: ./shared_worker_library/Dockerfile.worker
+      dockerfile: ./relevance/Dockerfile.relevance
     command: >
-      celery -A shared_worker_library.worker.relevance_worker worker -Q relevance_model_queue -l info -E -n relevance_model -c 15
+      celery -A relevance.relevance_worker worker -Q relevance_model_queue -l info -E -n relevance_model -c 3
     env_file:
       - .env
+    volumes:
+      - ./relevance:/app/relevance
+      - ./shared_worker_library:/app/shared_worker_library
     depends_on:
       - redis
 
