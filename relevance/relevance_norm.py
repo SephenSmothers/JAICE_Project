@@ -633,7 +633,6 @@ def _merge_counts(final_counts: Dict[str, int], layer_counts: Dict[str, int]) ->
     """
     Merge a layer's counts into the final_counts in-place.
     Normalizes bracketed keys like '[JWT]' -> 'JWT'.
-    Ignores unknown keys safely.
     """
     if not layer_counts:
         return
@@ -641,8 +640,7 @@ def _merge_counts(final_counts: Dict[str, int], layer_counts: Dict[str, int]) ->
         norm = k.strip("[]")
         if norm in final_counts:
             final_counts[norm] += int(v or 0)
-        else:
-            final_counts[norm] = final_counts.get(norm, 0) + int(v or 0)
+
 
 #################################################################################################################
 # Full redaction pipeline

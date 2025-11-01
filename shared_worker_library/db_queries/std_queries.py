@@ -24,12 +24,11 @@ def update_staging_table_failure(trace_id: str, row_ids: list[int]):
     
     with get_connection() as conn:
         with conn.cursor() as cur:
-            for row_id in row_ids:
-                cur.execute(
-                    "UPDATE internal_staging.email_staging SET status = %s WHERE id = %s",
-                    (EmailStatus.FAILED_PERMANENTLY.value, row_id),
-                    prepare=False,
-                )
+            cur.execute(
+                "UPDATE internal_staging.email_staging SET status = %s WHERE id = ANY(%s)",
+                (EmailStatus.FAILED_PERMANENTLY.value, row_ids),
+                prepare=False,
+            )
         conn.commit()
     logging.info(f"[{trace_id}] Staging table updated to FAILED_PERMANENTLY")
     return {"status": "updated_to_failed_permanently"}

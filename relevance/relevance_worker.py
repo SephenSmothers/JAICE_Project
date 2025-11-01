@@ -31,5 +31,6 @@ def load_model_on_worker_start(**_):
         logging.info("Relevance and NER models loaded successfully")
         
     except Exception as e:
-        logging.warning(f"Error loading Relevance or NER model: {e}")
+        logging.error(f"Error loading Relevance or NER model: {e}")
+        raise e
     

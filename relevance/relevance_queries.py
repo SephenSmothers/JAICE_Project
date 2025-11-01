@@ -7,28 +7,31 @@ logging = get_logger()
 
 def update_staging_table(trace_id: str, model_results: RelevanceModelResult):
     logging.info(f"[{trace_id}] Updating staging table")
-    with get_connection() as conn:
-        with conn.cursor() as cur:
-            if model_results.relevant:
-                cur.execute(
-                    "UPDATE internal_staging.email_staging SET status = %s WHERE id = ANY(%s)",
-                    (EmailStatus.AWAIT_CLASSIFICATION.value, [str(email_id) for email_id in model_results.relevant]),
-                    prepare=False
-                )
-            if model_results.purge:
-                cur.execute(
-                    "UPDATE internal_staging.email_staging SET status = %s WHERE id = ANY(%s)",
-                    (EmailStatus.PURGE.value, [str(email_id) for email_id in model_results.purge]),
-                    prepare=False
-                )
-            if model_results.retry:
-                cur.execute(
-                    "UPDATE internal_staging.email_staging SET status = %s WHERE id = ANY(%s)",
-                    (EmailStatus.RETRY.value, [str(email_id) for email_id in model_results.retry]),
-                    prepare=False
-                )
-                
-        conn.commit()
-    logging.info(f"[{trace_id}] Staging table updated")
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                if model_results.relevant:
+                    cur.execute(
+                        "UPDATE internal_staging.email_staging SET status = %s WHERE id = ANY(%s)",
+                        (EmailStatus.AWAIT_CLASSIFICATION.value, [str(email_id) for email_id in model_results.relevant]),
+                        prepare=False
+                    )
+                if model_results.purge:
+                    cur.execute(
+                        "UPDATE internal_staging.email_staging SET status = %s WHERE id = ANY(%s)",
+                        (EmailStatus.PURGE.value, [str(email_id) for email_id in model_results.purge]),
+                        prepare=False
+                    )
+                if model_results.retry:
+                    cur.execute(
+                        "UPDATE internal_staging.email_staging SET status = %s WHERE id = ANY(%s)",
+                        (EmailStatus.RETRY.value, [str(email_id) for email_id in model_results.retry]),
+                        prepare=False
+                    )
+                    
+            conn.commit()
+        logging.info(f"[{trace_id}] Staging table updated")
+    except Exception as e:
+        logging.error(f"[{trace_id}] Error updating staging table: {e}")
     return {"status": "updated"}
 
