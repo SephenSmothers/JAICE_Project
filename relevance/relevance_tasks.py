@@ -61,13 +61,13 @@ def relevance_task(trace_id: str, row_ids: list, attempt: int = 1):
         return {"status": "failure", "error": str(e)}
 
     try:
-        results = update_staging_table(trace_id, model_results)
+        _ = update_staging_table(trace_id, model_results)
     except Exception as e:
         logging.error(f"[{trace_id}] Error updating staging table: {e}")
         return {"status": "failure", "error": str(e)}
 
     try:
-        results = enqueue(trace_id, model_results, attempt)
+        _ = enqueue(trace_id, model_results, attempt)
     except Exception as e:
         logging.error(f"[{trace_id}] Error splitting and enqueueing results: {e}")
         return {"status": "failure", "error": str(e)}

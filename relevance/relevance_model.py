@@ -19,6 +19,8 @@ def init_model(model_path: str):
         
     except Exception as e:
         logging.error(f"Failed to load model from {model_path}: {e}")
+        MODEL = None
+        TOKENIZER = None
         raise
 
 
@@ -33,7 +35,7 @@ def predict(emails: pd.DataFrame, threshold: float = 0.1):
     texts = [text[:200] for text in texts]  # Truncate to 200 characters (like training)
     
     inputs = TOKENIZER(
-        texts, padding=True, truncation=True, return_tensors="pt", max_length=512
+        texts, padding=True, truncation=True, return_tensors="pt", max_length=200
     ).to(DEVICE)
     
     with torch.no_grad():
@@ -41,7 +43,8 @@ def predict(emails: pd.DataFrame, threshold: float = 0.1):
         probs = torch.softmax(logits, dim=1)[:, 1].cpu()  
         
     del inputs, logits
-    torch.cuda.empty_cache() if torch.cuda.is_available() else None
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
     
     new_df = emails.copy()
     new_df['job_probability'] = probs.tolist()

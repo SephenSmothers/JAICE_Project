@@ -28,8 +28,8 @@ def load_model_on_worker_start(**_):
         
         NLP_MODEL = spacy.load("en_core_web_lg")
         MODEL_LOADED = True
-        logging.info("Relevance model loaded successfully")
+        logging.info("Relevance and NER models loaded successfully")
         
     except Exception as e:
-        logging.warning(f"Error loading relevance model: {e}")
+        logging.warning(f"Error loading Relevance or NER model: {e}")
     
