@@ -22,7 +22,7 @@ JAICE (Job Application Intelligence & Career Enhancement) centralizes your job h
 
 ## Features
 - **Smart Application Sorting** — Stage your apps (Applied → Interview → Offer, etc.) and keep momentum.
-- **SI-Powered Matching (planned)** — Compare resume vs job post; highlight gaps & suggestions.
+- **AI-Powered Matching (planned)** — Compare resume vs job post; highlight gaps & suggestions.
 - **Personalized Insights (planned)** — Recommendations using skills, experience, and market data.
 - **Grit Score(planned)** — A momentum metric to visualize consistency and progress.
 - **Notifications** — Fine-grained alerts for interviews, follow-ups, and deadlines.
@@ -36,10 +36,22 @@ JAICE (Job Application Intelligence & Career Enhancement) centralizes your job h
 
 ### Backend
 - [FastAPI(Python)](https://fastapi.tiangolo.com/)
-- [PostgreSQL](https://www.postgresql.org/docs/)
-- **Natural Language Processing (NLP)**: [spaCy](https://spacy.io/api/doc) / [scikit-learn](https://scikit-learn.org/stable/) / [Hugging Face Transformers](https://huggingface.co/docs/transformers/en/index)
+- **Data Layer**:
+> - [Supabase](https://supabase.com/docs)
+> - [PostgreSQL](https://www.postgresql.org/docs/)
 
-Tooling: [ESLint](https://eslint.org/docs/latest/), GitHub + [Gitflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow)
+- **Authentication**
+> - [Firebase Authentication](https://firebase.google.com/docs/auth)
+
+- **Natural Language Processing (NLP)**:
+> - [spaCy](https://spacy.io/api/doc)
+> - [scikit-learn](https://scikit-learn.org/stable/)
+> -  [Hugging Face Transformers](https://huggingface.co/docs/transformers/en/index)
+
+- **Tooling**:
+> - [Docker](https://docs.docker.com/)
+> - [ESLint](https://eslint.org/docs/latest/)
+> - GitHub + [Gitflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow)
 
 ## Installation
 Open the terminal and run:   
