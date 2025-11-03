@@ -13,7 +13,9 @@ from enum import Enum
 
 logging = get_logger()
 
-DAYS_TO_SYNC = 7
+# change it back to 14 before deployment
+DAYS_TO_SYNC = 30
+
 EMAILS_PER_BATCH = 10
 MAX_RETRIES = 5
 RETRY_DELAY = 15

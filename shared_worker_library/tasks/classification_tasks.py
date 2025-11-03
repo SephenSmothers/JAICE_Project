@@ -1,3 +1,4 @@
+from shared_worker_library.models.model_config import BATCH_SIZE, CONFIDENCE_THRESHOLD
 from shared_worker_library.worker.classification_worker import celery_app
 from common.logger import get_logger
 from shared_worker_library.utils.task_definitions import TaskType, EmailStatus, ClassificationModelResult
@@ -6,8 +7,7 @@ from shared_worker_library.db_queries.classification_queries import update_stagi
 from typing import List, Dict
 from common.security import decrypt_token
 from shared_worker_library.utils.to_bytes import to_bytes
-import random
-
+from shared_worker_library.models.classification_model import get_classifier
 
 logging = get_logger()
 MAX_RETRIES = 3
@@ -93,7 +93,7 @@ def normalized_emails_for_model(trace_id: str, emails: list[dict]) -> list[dict]
     return emails
 
 def run_classification_model(trace_id: str, emails: list[dict]) -> ClassificationModelResult:
-    logging.warning(f"[{trace_id}] Running classification model. Functionality not yet implemented.")
+    logging.warning(f"[{trace_id}] Running classification model on {len(emails)} emails")
     # This is where the classification model logic will sit. It will always receive normalized emails that have been decrypted.
     # It should return a ClassificationModelResult object with relevant, retry, and purge lists.
     #
@@ -110,39 +110,81 @@ def run_classification_model(trace_id: str, emails: list[dict]) -> Classificatio
     rejected = []
     retry = []
 
-    for index, email in enumerate(emails): #CHANGE TO for email in emails: WITH PROD LOGIC unless index is needed
+    try:
+        # Get the classifier (lazy loaded)
+        classifier = get_classifier()
+        logging.info(f"[{trace_id}] Classification model loaded successfully")
+
+    except Exception as e:
+        logging.error(f"[{trace_id}] Failed to load classification model: {e}")
+        # If model loading fails, put all emails in retry
+        retry = [{"email_id": email["id"]} for email in emails]
+
+        return ClassificationModelResult(applied=applied, interview=interview, offer=offer, accepted=accepted, rejected=rejected, retry=retry)
+    
+    for i in range(0, len(emails), BATCH_SIZE):
+        batch = emails[i:i + BATCH_SIZE]
+        batch_num = (i // BATCH_SIZE) + 1
+        total_batches = (len(emails) + BATCH_SIZE - 1) // BATCH_SIZE
+        logging.info(f"[{trace_id}] Processing batch {batch_num}/{total_batches}: {len(batch)} emails")
+
         try:
-            # This is where the model should ingest the email data and produce a result (binary, confidence score, etc.)
-            # This may be adjusted to account for the specific model architecture we choose. Binary, Confidence, Multi-class, etc.
-            # But it should as it's final step produce three lists that sort the email ids into relevant, retry, and purge.
-            # For now, we simulate model behavior with a placeholder confidence score.
-            
-            if index == 0: # force first email to always fail (testing retry logic)
-                raise RuntimeError("Simulated model processing error for stress testing.")
-            
-            choice_list = ["applied", "interview", "offer", "accepted", "rejected"]
-            model_choice = random.choice(choice_list)
-            
-            if model_choice == "applied":
-                applied.append({"email_id": email["id"]})
-            elif model_choice == "interview":
-                interview.append({"email_id": email["id"]})
-            elif model_choice == "offer":
-                offer.append({"email_id": email["id"]})
-            elif model_choice == "accepted":
-                accepted.append({"email_id": email["id"]})
-            else:
-                rejected.append({"email_id": email["id"]})
+            # prepare batch texts
+            batch_texts = []
+            for email in batch:
+                # This is where the model should ingest the email data and produce a result (binary, confidence score, etc.)
+                # This may be adjusted to account for the specific model architecture we choose. Binary, Confidence, Multi-class, etc.
+                # But it should as it's final step produce three lists that sort the email ids into relevant, retry, and purge.
+                # For now, we simulate model behavior with a placeholder confidence score.
+                
+                # combine email content for classification
+                email_text = f"Subject: {email['subject']} \nFrom: {email['sender']} \nBody: {email['body']}"
+                batch_texts.append(email_text)
+
+            # use the classification model
+            # classify entire batch at once
+            batch_results = []
+            for text in batch_texts:
+                result = classifier(
+                    text,
+                    candidate_labels=["applied", "interview", "offer", "accepted", "rejected"]
+                )
+                batch_results.append(result)
+                
+            #process batch results
+            for email, result in zip(batch, batch_results):
+
+                # get the highest confidence prediction
+                predicted_label = result['labels'][0]
+                confidence = result['scores'][0]
+
+                # store confidence score in db
+                confidence_score = confidence
+
+                # sort into list based on predicted label
+                if predicted_label == "applied":
+                    applied.append({"email_id": email["id"], "confidence": confidence_score})
+                elif predicted_label == "interview":
+                    interview.append({"email_id": email["id"], "confidence": confidence_score})
+                elif predicted_label == "offer":
+                    offer.append({"email_id": email["id"], "confidence": confidence_score})
+                elif predicted_label == "accepted":
+                    accepted.append({"email_id": email["id"], "confidence": confidence_score})
+                else:
+                    rejected.append({"email_id": email["id"], "confidence": confidence_score})
 
         except Exception as e:
-            logging.error(f"[{trace_id}] Error processing email: {e}")
+            logging.error(f"[{trace_id}] Error processing email: {email['id']}, {e}")
             retry.append({"email_id": email["id"]})
+
+    # Log classification results summary
+    logging.info(f"[{trace_id}] Classification results: applied={len(applied)}, interview={len(interview)}, offer={len(offer)}, accepted={len(accepted)}, rejected={len(rejected)}, retry={len(retry)}")
 
     return ClassificationModelResult(applied=applied, interview=interview, offer=offer, accepted=accepted, rejected=rejected, retry=retry)
 
 def enqueue(trace_id: str, model_results: ClassificationModelResult, attempt: int):
     logging.info(f"[{trace_id}] Splitting and enqueueing results")
-    # This function sends tasks to the proper queues based on model results.
+    # This function sends tasks to the proper queues based on model results.P
     
     applied = [item["email_id"] for item in model_results.applied]
     interview = [item["email_id"] for item in model_results.interview]
@@ -163,17 +205,18 @@ def enqueue(trace_id: str, model_results: ClassificationModelResult, attempt: in
     # Enqueue retry emails back to classification model with incremented attempt
     if retry:
         countdown = (2 ** (attempt - 1)) * 60
+        logging.info(f"[{trace_id}] Enqueueing {len(retry)} emails for retry with countdown {countdown}s")
         classification_task.apply_async(
             args=[trace_id, retry, attempt + 1], countdown=countdown
         )
-        return
+
 
     # Log relevance task enqueueing summary
-    logging.info(
-        f"[{trace_id}] Enqueueing summary: Enqueued {len(relevant_ids)} relevant, {len(retry_ids)} retry, and {len(purge_ids)} purge emails"
-    )
+    logging.info(f"[{trace_id}] Enqueueing summary: Enqueued {len(email_ids)} relevant, {len(retry)} retry emails")
 
     return {
         "status": "success",
-        "trace_id": trace_id
+        "trace_id": trace_id,
+        "classified_count": len(email_ids),
+        "retry_count": len(retry),
     }
