@@ -17,10 +17,13 @@ def call_openai_chat(model: str, messages: list, max_tokens: int = 512, temperat
                 temperature=temperature,
             )
             text = resp.choices[0].message['content']
-            return {"raw": text, "response": resp}
-        except openai.error.RateLimitError:
-            time.sleep(2 ** attempt)
+        
+            if attempt == 3:
+                raise
+        
+            return {"raw": text, "response": resp} 
         except Exception as e:
-            # log and decide whether to retry
-            raise
+            time.sleep(2 ** attempt)
+
+            
     raise RuntimeError("OpenAI calls failed after retries")
