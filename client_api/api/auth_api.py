@@ -1,12 +1,12 @@
 import uuid
-import os, jwt
+import os, jwt, httpx
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse, RedirectResponse
 from google_auth_oauthlib.flow import Flow
 from pathlib import Path
 from client_api.deps.auth import get_current_user, get_user_from_token_query
-from common.security import encrypt_token
+from common.security import encrypt_token, decrypt_token
 from celery import Celery
 from common.logger import get_logger
 from client_api.utils.task_definitions import TaskType
@@ -27,7 +27,7 @@ REDIRECT_URI = os.getenv("REDIRECT_URI")
 CLIENT_SECRETS_FILE = Path(__file__).resolve().parent.parent / os.getenv(
     "CLIENT_FILE_NAME"
 )
-
+GOOGLE_REVOKE_ENDPOINT = "https://oauth2.googleapis.com/revoke"
 
 @router.get("/consent", summary="Generates the Google OAuth2 consent screen URL.")
 def get_oauth_consent_url(user: dict = Depends(get_user_from_token_query)):
@@ -120,8 +120,7 @@ async def oauth_callback(request: Request, code: str, state: str):
 
     return RedirectResponse(FRONTEND_DASHBOARD_URL)
 
-
-def phase_1_mint_jwt(uid: str) -> str:
+def mint_jwt(uid: str) -> str:
     logging.info(f"Minting RLS JWT for user: {uid}")
     supabase_secret = os.getenv("SUPABASE_JWT_SECRET")
 
@@ -131,10 +130,8 @@ def phase_1_mint_jwt(uid: str) -> str:
             "SUPABASE_JWT_SECRET environment variable is not set. Cannot sign RLS token."
         )
 
-    clock_skew_buffer = timedelta(minutes=5)
-    now = datetime.now(timezone.utc)
-    adjusted_iat = now - clock_skew_buffer
-    expiration_time = now + timedelta(
+    adjusted_iat = datetime.now(timezone.utc) - timedelta(minutes=2)
+    expiration_time = datetime.now(timezone.utc) + timedelta(
         days=BACKGROUND_DURATION_DAYS
     )
 
@@ -192,28 +189,176 @@ async def phase_2_store_and_respond(
 
 
 @router.post(
-    "/setup-rls-session",
+    "/revoke-gmail-consent",
     status_code=status.HTTP_200_OK,
-    summary="Verifies Firebase token, mints RLS JWT, and initializes user DB row.",
+    summary="Revokes Gmail consent by removing the refresh token and updating consent status.",
 )
-async def setup_rls_session(
-    request: Request, user_data: str = Depends(get_current_user)
+async def revoke_gmail_consent(
+    request: Request, user: dict = Depends(get_current_user)
 ):
-    logging.info(f"Setting up RLS session for user: {user_data.get('uid')}")
+    uid = user.get('uid')
+    logging.info(f"Initiating Gmail consent revocation for user: {uid}")
+    pool = request.app.state.pool
+    
+    encrypted_refresh_token = None
     try:
-        logging.debug("Minting backend RLS JWT...")
-        backend_jwt = phase_1_mint_jwt(user_data.get("uid"))
+        async with pool.acquire() as conn:
+            record = await conn.fetchrow(
+                "SELECT google_refresh_token FROM user_account WHERE user_id = $1", uid
+            )
+        
+        if record is None or not record["google_refresh_token"]:
+            logging.warning(f"No refresh token found for user {uid}. Proceeding with database cleanup.")
+            refresh_token_to_revoke = None 
+        else:
+            encrypted_refresh_token = record["google_refresh_token"]
+            refresh_token_to_revoke = decrypt_token(encrypted_refresh_token) 
 
     except Exception as e:
-        logging.error(f"JWT MINTING ERROR")
+        logging.error(f"DB READ ERROR during revocation for user {uid}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Critical system error during JWT minting",
+            detail="Database error while retrieving refresh token.",
         )
 
-    DUMMY_REFRESH_TOKEN = "NO_GMAIL_TOKEN_GRANTED"
+    if refresh_token_to_revoke:
+        logging.debug(f"Calling Google revocation endpoint for user: {uid}")
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    GOOGLE_REVOKE_ENDPOINT,
+                    data={"token": refresh_token_to_revoke}, 
+                )
+            
+            if response.status_code == status.HTTP_200_OK:
+                logging.info(f"Successfully revoked token on Google's side for user: {uid}")
+            else:
+                logging.error(
+                    f"Google Revocation failed (Status: {response.status_code}) for user {uid}. "
+                    f"Response: {response.text}"
+                )
+                pass 
+
+        except httpx.RequestError as e:
+            logging.error(f"HTTPX error during Google revocation for user {uid}: {e}")
+            pass 
+        except Exception as e:
+            logging.error(f"An unexpected error occurred during Google revocation for user {uid}: {e}")
+            pass
+
+    logging.info(f"Clearing local refresh token and resetting flags for user: {uid}")
     try:
-        logging.debug("Storing tokens and responding to client...")
+        async with pool.acquire() as conn:
+            await conn.execute(
+                """
+                UPDATE user_account 
+                SET 
+                    google_refresh_token = NULL, 
+                    gmail_connected = False,
+                    gmail_connected_at = NULL
+                WHERE user_id = $1
+                """,
+                uid,
+            )
+        logging.info(f"Database cleanup successful for user: {uid}")
+    except Exception as e:
+        logging.error(f"DB WRITE ERROR during revocation cleanup for user {uid}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error while cleaning up connection status.",
+        )
+    
+    # Optional: Dispatch a task to stop any ongoing sync operations
+    
+    return JSONResponse(
+        {"status": "success", "message": "Gmail consent successfully revoked."},
+        status_code=status.HTTP_200_OK
+    )
+
+@router.post(
+    "/setup-user-db",
+    status_code=status.HTTP_200_OK,
+    summary="Checks if the user already has a database record.",
+)
+async def setup_user_db(request: Request, user: dict = Depends(get_current_user)):
+    uid = user.get("uid")
+    email = user.get("email")
+    pool = request.app.state.pool
+    logging.info(f"Checking database record for user: {uid}")
+    
+    try:
+        async with pool.acquire() as conn:
+            record = await conn.fetchrow(
+                "SELECT user_id FROM user_account WHERE user_id = $1", uid
+            )
+
+        if record:
+            logging.info(f"User {uid} already exists in DB.")
+            return {"status": "exists", "user_id": uid}
+        
+        DUMMY_REFRESH_TOKEN = "NO_GMAIL_TOKEN_GRANTED"
+
+        jwt_token = mint_jwt(uid)
+        # User does not exist — create record
+        async with pool.acquire() as conn:
+            await conn.execute(
+                """
+                INSERT INTO user_account (user_id, user_email, backend_rls_jwt)
+                VALUES ($1, $2, $3)
+                """,
+                uid,
+                email,
+                jwt_token,
+            )
+            logging.info(f"Created new record for user {uid}")
+            return {"status": "created", "user_id": uid}
+        
+    except Exception as e:
+        logging.error(f"DB error during user setup: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error while setting up user record.",
+        )
+
+
+
+@router.post(
+    "/setup-rls-session",
+    status_code=status.HTTP_200_OK,
+    summary="Fetches or mints RLS JWT if missing, ensuring user DB row is initialized.",
+)
+async def setup_rls_session(request: Request, user_data: dict = Depends(get_current_user)):
+    uid = user_data.get("uid")
+    pool = request.app.state.pool
+    logging.info(f"Setting up RLS session for user: {uid}")
+
+    try:
+        async with pool.acquire() as conn:
+            record = await conn.fetchrow(
+                "SELECT backend_rls_jwt FROM user_account WHERE user_id = $1", uid
+            )
+
+        # If record exists and JWT is already stored, use it
+        if record and record["backend_rls_jwt"]:
+            backend_jwt = record["backend_rls_jwt"]
+            logging.info(f"Using existing RLS JWT for user: {uid}")
+
+        # Otherwise mint and store new token
+        else:
+            logging.info(f"No RLS JWT found. Minting new one for user: {uid}")
+            backend_jwt = mint_jwt(uid)
+            async with pool.acquire() as conn:
+                await conn.execute(
+                    """
+                    UPDATE user_account 
+                    SET backend_rls_jwt = $1 
+                    WHERE user_id = $2
+                    """,
+                    backend_jwt,
+                    uid,
+                )
+
+        DUMMY_REFRESH_TOKEN = "NO_GMAIL_TOKEN_GRANTED"
         return await phase_2_store_and_respond(
             request,
             user_data,
@@ -222,11 +367,12 @@ async def setup_rls_session(
         )
 
     except Exception as e:
-        logging.error(f"Critical system error during session setup")
+        logging.error(f"Critical error during RLS setup for user {uid}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Critical system error during session setup",
+            detail="Critical system error during RLS setup",
         )
+
 
 
 @router.get(
