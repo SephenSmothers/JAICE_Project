@@ -19,6 +19,22 @@ def get_refresh_token(uid: str) -> str | None:
             logging.info(f"Retrieved refresh token. Found: {row is not None}")
             return row[0] if row else None
 
+def can_fetch_emails(uid: str) -> bool:
+    """Checks if emails can be fetched for a given user ID."""
+    logging.info("Checking if emails can be fetched")
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT google_refresh_token FROM user_account WHERE user_id = %s",
+                (uid,),
+                prepare=False,
+            )
+            row = cur.fetchone()
+            can_fetch = row[0] if row else False
+            text = "Yes" if can_fetch else "No"
+            logging.info(f"Refresh token exists for user: {text}")
+            return can_fetch
+    
 
 def insert_staging_records(trace_id: str, encrypted_emails: List[Dict]) -> List[str]:
     """

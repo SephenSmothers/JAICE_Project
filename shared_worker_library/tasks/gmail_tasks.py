@@ -8,7 +8,7 @@ from common.security import encrypt_token, decrypt_token
 from googleapiclient.discovery import build
 from shared_worker_library.utils.task_definitions import TaskType, EmailStatus
 from common.logger import get_logger
-from shared_worker_library.db_queries.gmail_queries import get_refresh_token, insert_staging_records
+from shared_worker_library.db_queries.gmail_queries import get_refresh_token, insert_staging_records, can_fetch_emails
 from enum import Enum
 
 logging = get_logger()
@@ -38,6 +38,16 @@ def initial_sync(self, uid: str, trace_id: str):
         f"[{trace_id}] Gmail Initial Sync Dispatcher: Starting initial sync"
     )
 
+    try:
+        if not can_fetch_emails(uid):
+            logging.info(f"[{trace_id}] Gmail Initial Sync Dispatcher: No refresh token available, aborting sync.")
+            return
+    except Exception as e:
+        logging.error(
+            f"[{trace_id}] Gmail Initial Sync Dispatcher: Error checking fetch capability: {e}"
+        )
+        raise self.retry(exc=e, countdown=RETRY_DELAY)
+    
     try:
         encrypted_token = get_refresh_token(uid)
         token = decrypt_token(encrypted_token)
@@ -110,7 +120,15 @@ def fetch_content(
         f"[{trace_id}] fetch_content: start (batch={len(message_id_batch)})"
     )
 
-
+    try:
+        if not can_fetch_emails(uid):
+            logging.info(f"[{trace_id}] fetch_content: No refresh token available, aborting fetch.")
+            return
+    except Exception as e:
+        logging.error(
+            f"[{trace_id}] fetch_content: Error checking fetch capability: {e}"
+        )
+        raise self.retry(exc=e, countdown=RETRY_DELAY)
     # This needs cleaned up into clean try except blocks for each step.
     # This also needs to be separated from the inital intake worker
     try:
