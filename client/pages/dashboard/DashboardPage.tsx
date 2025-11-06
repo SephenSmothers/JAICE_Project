@@ -1,36 +1,29 @@
-// import { localfiles } from "@/directory/path/to/localimport";
+import {
+  GritCard,
+  AppsByCategoryCard,
+  AppsOverTimeCard,
+  AppsByStageCard,
+  SplitByStageCard,
+  AvgTimeInStageCard,
+  AvgAppsPerWeekCard,
+} from "./dashboard-components";
 
 export function DashboardPage() {
-
   return (
-    <div className="w-full h-full flex items-center justify-center flex-col gap-4 bg-orange-300"
-    style={{background: "var(--color-bg)"}}>
-      <main className="mx-auto max-w-6xl px-6 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <ApplicationsByStageCard />
-            <SplitByStageCard />
+    <div className="w-full h-full flex justify-center">
+      {/* Content Grid */}
+      <main className="mx-auto w-full max-w-6xl px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Row 1 */}
+          {/* Row 1 */}
+          {/* Right column stack (two half-height cards) */}
+          <div className="lg:cols-span-1 grid grid-rows-2 gap-6">
+
           </div>
-        </main>
+        </div>
+      </main>
     </div>
-  );
+  )
 }
 
-
-
-
-
-// export default function DashboardPage() {
-//   // If your board lives elsewhere, ensure JobStatsProvider wraps BOTH pages.
-//   return (
-//     <JobStatsProvider>
-//       <div className="w-full h-full bg-slate-950 text-slate-100">
-//         <main className="mx-auto max-w-6xl px-6 py-8">
-//           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-//             <ApplicationsByStageCard />
-//             <SplitByStageCard />
-//           </div>
-//         </main>
-//       </div>
-//     </JobStatsProvider>
-//   );
-// }
+export default DashboardPage;
