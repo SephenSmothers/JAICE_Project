@@ -1,7 +1,7 @@
 import uuid
 import os, jwt, httpx
 from datetime import datetime, timedelta, timezone
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status, Body
 from fastapi.responses import JSONResponse, RedirectResponse
 from google_auth_oauthlib.flow import Flow
 from pathlib import Path
@@ -10,6 +10,7 @@ from common.security import encrypt_token, decrypt_token
 from celery import Celery
 from common.logger import get_logger
 from client_api.utils.task_definitions import TaskType
+from pydantic import BaseModel
 
 logging = get_logger()
 
@@ -32,14 +33,14 @@ GOOGLE_REVOKE_ENDPOINT = "https://oauth2.googleapis.com/revoke"
 @router.get("/consent", summary="Generates the Google OAuth2 consent screen URL.")
 def get_oauth_consent_url(user: dict = Depends(get_user_from_token_query)):
     uid = user.get("uid")
-    logging.info(f"Generating OAuth2 consent URL for user: {uid}")
+    logging.info(f"Generating OAuth2 consent URL.")
 
     flow = Flow.from_client_secrets_file(
         CLIENT_SECRETS_FILE, scopes=SCOPES, redirect_uri=REDIRECT_URI
     )
 
     auth_url, state = flow.authorization_url(access_type="offline", state=uid)
-    logging.debug(f"OAuth2 consent URL generated: {auth_url}")
+    logging.debug(f"OAuth2 consent URL generated")
     return RedirectResponse(auth_url)
 
 
@@ -50,7 +51,26 @@ async def oauth_callback(request: Request, code: str, state: str):
     record in the database.
     """
     uid = state
-    logging.info(f"Received OAuth callback for user: {uid}")
+    logging.info(f"Received OAuth callback for user.")
+    
+    redis = request.app.state.redis
+    raw_value = await redis.get(f"gmail_sync_window:{uid}")
+    await redis.delete(f"gmail_sync_window:{uid}")
+
+    logging.warning(f"Fetched gmail_sync_window from redis for user {uid}: {raw_value}")
+    if not raw_value or str(raw_value).lower() == "none":
+        days_to_sync = 14
+    else:
+        try:
+            days_to_sync = int(raw_value)
+        except (ValueError, TypeError):
+            logging.warning(
+                f"Invalid days_to_sync value '{raw_value}' for user {uid}; defaulting to 14"
+            )
+            days_to_sync = 14
+
+    start_date = datetime.utcnow() - timedelta(days=days_to_sync)
+    logging.info(f"Using {days_to_sync}-day sync window for user {uid} (start date: {start_date.isoformat()})")
 
     flow = Flow.from_client_secrets_file(
         CLIENT_SECRETS_FILE, scopes=SCOPES, redirect_uri=REDIRECT_URI
@@ -110,7 +130,7 @@ async def oauth_callback(request: Request, code: str, state: str):
         logging.info(
             f"Enqueuing initial Gmail inbox sync task for user: {uid} with trace ID: {trace_id}"
         )
-        dispatch_initial_gmail_sync(uid, trace_id)
+        dispatch_initial_gmail_sync(uid, trace_id, start_date)
     except Exception as e:
         logging.error(f"Error dispatching initial Gmail sync for user {uid}: {e}")
         raise HTTPException(
@@ -320,17 +340,23 @@ async def setup_user_db(request: Request, user: dict = Depends(get_current_user)
             detail="Database error while setting up user record.",
         )
 
-
+class SetupRLSBody(BaseModel):
+    daysToSync: int | None = 14
 
 @router.post(
     "/setup-rls-session",
     status_code=status.HTTP_200_OK,
     summary="Fetches or mints RLS JWT if missing, ensuring user DB row is initialized.",
 )
-async def setup_rls_session(request: Request, user_data: dict = Depends(get_current_user)):
+async def setup_rls_session(
+    request: Request,
+    user_data: dict = Depends(get_current_user),
+    body: SetupRLSBody = Body(...),
+):
     uid = user_data.get("uid")
     pool = request.app.state.pool
-    logging.info(f"Setting up RLS session for user: {uid}")
+    days_to_sync = body.daysToSync or 3
+    logging.info(f"Setting up RLS session for user: {uid}, days_to_sync={days_to_sync}")
 
     try:
         async with pool.acquire() as conn:
@@ -342,8 +368,6 @@ async def setup_rls_session(request: Request, user_data: dict = Depends(get_curr
         if record and record["backend_rls_jwt"]:
             backend_jwt = record["backend_rls_jwt"]
             logging.info(f"Using existing RLS JWT for user: {uid}")
-
-        # Otherwise mint and store new token
         else:
             logging.info(f"No RLS JWT found. Minting new one for user: {uid}")
             backend_jwt = mint_jwt(uid)
@@ -358,7 +382,14 @@ async def setup_rls_session(request: Request, user_data: dict = Depends(get_curr
                     uid,
                 )
 
+        # Store sync window (you can adjust this part based on your infra)
+        redis = request.app.state.redis
+        await redis.set(f"gmail_sync_window:{uid}", days_to_sync, ex=30)
+
+        logging.info(f"Stored Gmail sync window ({days_to_sync} days) for user {uid}")
+
         DUMMY_REFRESH_TOKEN = "NO_GMAIL_TOKEN_GRANTED"
+        
         return await phase_2_store_and_respond(
             request,
             user_data,
@@ -423,10 +454,10 @@ def me(user=Depends(get_current_user)):
     return {"uid": user["uid"], "email": user.get("email")}
 
 
-def dispatch_initial_gmail_sync(uid: str, trace_id: str):
+def dispatch_initial_gmail_sync(uid: str, trace_id: str, start_date: datetime):
     return celery_client.send_task(
         TaskType.GMAIL_INITIAL_SYNC.task_name,
-        args=[uid, trace_id],
+        args=[uid, trace_id, start_date.isoformat()],
         queue=TaskType.GMAIL_INITIAL_SYNC.queue_name,
         headers={"trace_id": trace_id, "uid": uid},
     )

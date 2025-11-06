@@ -10,10 +10,10 @@ from shared_worker_library.utils.task_definitions import TaskType, EmailStatus
 from common.logger import get_logger
 from shared_worker_library.db_queries.gmail_queries import get_refresh_token, insert_staging_records, can_fetch_emails
 from enum import Enum
+from datetime import datetime, timedelta
 
 logging = get_logger()
 
-DAYS_TO_SYNC = 7
 EMAILS_PER_BATCH = 10
 MAX_RETRIES = 5
 RETRY_DELAY = 15
@@ -33,10 +33,13 @@ r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
     max_retries=MAX_RETRIES,
     default_retry_delay=RETRY_DELAY,
 )
-def initial_sync(self, uid: str, trace_id: str):
+def initial_sync(self, uid: str, trace_id: str, start_date_str: str):
     logging.info(
         f"[{trace_id}] Gmail Initial Sync Dispatcher: Starting initial sync"
     )
+
+    start_date = datetime.fromisoformat(start_date_str)
+    logging.info(f"[{trace_id}] Gmail Initial Sync Dispatcher: Using start_date={start_date}")
 
     try:
         if not can_fetch_emails(uid):
@@ -67,7 +70,8 @@ def initial_sync(self, uid: str, trace_id: str):
         raise self.retry(exc=e)
 
     try:
-        message_ids = fetch_message_ids(access_token, trace_id, DAYS_TO_SYNC)
+        days_to_sync = (datetime.utcnow() - start_date).days
+        message_ids = fetch_message_ids(access_token, trace_id, days_to_sync)
     except Exception as e:
         logging.error(
             f"[{trace_id}] Gmail Initial Sync Dispatcher: Error fetching message IDs: {e}"

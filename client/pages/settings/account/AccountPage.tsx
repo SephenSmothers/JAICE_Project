@@ -7,13 +7,19 @@ import { useEffect, useState } from "react";
 import { api } from "@/global-services/api";
 import userIcon from "@/assets/icons/user.svg";
 import { FloatingInputField } from "@/global-components/FloatingInputField";
+import { DaysToSync } from "./account-components/DaysToSync";
 
 export function AccountPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [gmailConnected, setGmailConnected] = useState(false);
   const [gmailBusy, setGmailBusy] = useState(false);
+  const [showDaysToSync, setShowDaysToSync] = useState(false);
+  const [daysToSync, setDaysToSync] = useState<number | null>(null);
 
+  const daysToSyncOptions = [3, 7, 14, 45];
+
+  // Get the inital Gmail connection status for the user when they load the page
   useEffect(() => {
     checkGmailStatus();
   }, []);
@@ -31,9 +37,23 @@ export function AccountPage() {
       setError("Error checking gmail status.");
     }
   }
+  async function handleShowModal() {
+    if (gmailConnected) {
+      await handleGmailLinking();
+      return;
+    }
+    setShowDaysToSync(true);
+  }
 
-  async function handleGmailButtonClick() {
-    if (gmailBusy) return; // Prevent multiple clicks
+  // Handle the user's selection of days to sync from Gmail
+  async function handleDaysSelection(days: number) {
+    setDaysToSync(days);
+    await handleGmailLinking(days);
+  }
+
+  // Handle linking or unlinking Gmail
+  async function handleGmailLinking(days?: number) {
+    if (gmailBusy) return; 
     setGmailBusy(true);
 
     try {
@@ -45,7 +65,7 @@ export function AccountPage() {
         }
       } else {
         console.log("Linking Gmail...");
-        const res = await linkGmail();
+        const res = await linkGmail(days);
         if (res.status === "success") {
           setGmailConnected(true);
         }
@@ -55,14 +75,19 @@ export function AccountPage() {
       console.error("Gmail link/unlink error:", error);
       setError("Error processing Gmail link.");
     } finally {
+      setShowDaysToSync(false);
       setGmailBusy(false);
     }
   }
 
-  async function linkGmail() {
-    const res = await api("/api/auth/setup-rls-session", { method: "POST" });
+  async function linkGmail(days: number = 14) {
+    const res = await api("/api/auth/setup-rls-session", {
+      method: "POST",
+      body: JSON.stringify({ daysToSync: days }),
+    });
+    console.log("Setup RLS session response:", res);
     const token = await getIdToken();
-    window.location.href = `http://localhost:8000/api/auth/consent?token=${token}`;
+    window.location.href = `http://localhost:8000/api/auth/consent?token=${token}&days=${days}`;
     return res;
   }
 
@@ -70,6 +95,8 @@ export function AccountPage() {
     return await api("/api/auth/revoke-gmail-consent", { method: "POST" });
   }
 
+
+  // Determine the Gmail button text based on connection status and busy state
   const gmailButtonText = gmailBusy
     ? "Processing..."
     : gmailConnected
@@ -118,6 +145,8 @@ export function AccountPage() {
     setError(`Failed to delete account: ${res.code}`);
   }
 
+
+  // This was refactored for better readability on the page. It still needs updated to present on mobile devices.
   return (
     <div
       className="w-full h-full bg-slate-950 text-slate-100"
@@ -209,9 +238,7 @@ export function AccountPage() {
               </p>
               <div className="flex flex-col md:flex-row w-full my-6 gap-4">
                 <div className="flex w-1/2">
-                  <Button onClick={handleGmailButtonClick}>
-                    {gmailButtonText}
-                  </Button>
+                  <Button onClick={handleShowModal}>{gmailButtonText}</Button>
                 </div>
                 <div className="flex w-1/2 text-left items-center justify-leading">
                   {error && (
@@ -291,6 +318,13 @@ export function AccountPage() {
           </section>
         </div>
       </main>
+      {/*Controls the Modal that allows users to specify the initial number of days to sync from gmail*/}
+      <DaysToSync
+        show={showDaysToSync}
+        options={daysToSyncOptions}
+        onSelection={handleDaysSelection}
+        onCancel={() => setShowDaysToSync(false)}
+      />
     </div>
   );
 }

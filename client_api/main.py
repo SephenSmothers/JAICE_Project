@@ -7,7 +7,10 @@ from client_api.services.firebase_admin import initialize_firebase_sdk, check_fi
 from client_api.api.auth_api import router as auth_router
 from client_api.services.supabase_client import check_db_pool_status, connect_to_db, close_db_connection
 import httpx
-
+import redis.asyncio as redis
+import os
+from dotenv import load_dotenv
+load_dotenv()  # Load environment variables from .env file
 from common.logger import get_logger
 logging = get_logger()
 
@@ -35,6 +38,14 @@ async def lifespan(app: FastAPI):
         logging.error(f"Fatal: Database connection failed: {e}")
         raise
 
+    try:
+        broker_url = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
+        app.state.redis = redis.from_url(broker_url, decode_responses=True)
+        logging.info(f"Redis client connected at {broker_url}")
+    except Exception as e:
+        logging.error(f"FATAL: Redis connection failed: {e}")
+        raise
+    
     # The application starts serving requests here
     yield 
 
