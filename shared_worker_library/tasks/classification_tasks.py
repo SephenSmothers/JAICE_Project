@@ -117,9 +117,6 @@ def run_classification_model(trace_id: str, emails: list[dict]) -> Classificatio
             # But it should as it's final step produce three lists that sort the email ids into relevant, retry, and purge.
             # For now, we simulate model behavior with a placeholder confidence score.
             
-            if index == 0: # force first email to always fail (testing retry logic)
-                raise RuntimeError("Simulated model processing error for stress testing.")
-            
             choice_list = ["applied", "interview", "offer", "accepted", "rejected"]
             model_choice = random.choice(choice_list)
             

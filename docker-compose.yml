@@ -94,6 +94,21 @@ services:
     depends_on:
       - redis
 
+  transfer_worker:
+    container_name: transfer_worker
+    build:
+      context: .
+      dockerfile: ./table_transfer/Dockerfile.transfer
+    command: >
+      celery -A table_transfer.transfer_worker worker -Q staging_to_job_apps_queue -l info -E -n transfer_worker -c 15
+    env_file:
+      - .env
+    volumes:
+      - ./table_transfer:/app/table_transfer
+      - ./shared_worker_library:/app/shared_worker_library
+    depends_on:
+      - redis
+
   # Flower monitoring tool for Celery
   flower:
     container_name: flower_monitor
