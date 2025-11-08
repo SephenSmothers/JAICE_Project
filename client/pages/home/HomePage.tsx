@@ -6,7 +6,12 @@ import { Column } from "@/pages/home/home-components/Column";
 import { JobCard } from "@/pages/home/home-components/JobCards";
 import type { JobCardType } from "@/pages/home/home-components/JobCards";
 
-import { getLastEmails, convertEmailsToJobCards } from "@/global-services/readEmails";
+import {
+  getLastEmails,
+  convertEmailsToJobCards,
+} from "@/global-services/readEmails";
+import { api } from "@/global-services/api";
+import { transform } from "framer-motion";
 
 //import mockJobs from "./MockJobCards.json";
 
@@ -36,56 +41,68 @@ export function HomePage() {
     { value: "za", label: "Z - A" },
   ];
 
-  // Clear Selected jobs when multi-select mode is turned off
-  // useEffect(() => {
-  //   async function loadEmails() {
-  //     if (emailsLoaded || isLoadingEmails) return; // Prevent multiple loads
+  useEffect(() => {
+    loadEmails();
+  }, []);
 
-  //     setIsLoadingEmails(true);
+  async function loadEmails() {
+    if (emailsLoaded || isLoadingEmails) return; // Prevent multiple loads
 
-  //     try {
-  //       const emails = await getLastEmails(10); // Fetch the last 10 emails
-  //       const emailJobCards = convertEmailsToJobCards(emails); // Convert emails to job card format
+    setIsLoadingEmails(true);
 
-  //       setJobs(emailJobCards); // Update state with fetched job cards
-  //       setEmailsLoaded(true); // Mark emails as loaded
-  //     } catch (error) {
-  //       console.error("Failed to load emails:", error);
-  //       setEmailsLoaded(true); // Even on failure mark as loaded to prevent retrying
-  //     }
-  //     finally
-  //     {
-  //       setIsLoadingEmails(false);
-  //     }
-  //   }
-    
-  //   loadEmails();
-  // }, [ emailsLoaded, isLoadingEmails]);
+    try {
+      const res = await api("/api/jobs/latest-jobs");
+
+      if (res.status == "success") {
+        const cards = transformEmailsToJobCards(res.jobs);
+        console.log("Transformed Job Cards:", cards);
+        setJobs(cards);
+        setEmailsLoaded(true);
+      }
+    } catch (error) {
+      console.error("Failed to load emails:", error);
+    } finally {
+      setIsLoadingEmails(false);
+    }
+  }
+
+  function transformEmailsToJobCards(rawJobs: any[] = []): JobCardType[] {
+    return rawJobs.map((job) => ({
+      id: job.id,
+      title: job.title || "No Title",
+      column: job.app_stage || "applied",
+      date: job.received_at
+        ? new Date(job.received_at).toLocaleDateString()
+        : undefined,
+    }));
+  }
 
   // Clear selected jobs when multi-select mode is turned off
   useEffect(() => {
-    if (!isMultiSelecting) 
-    {
+    if (!isMultiSelecting) {
       setSelectedJobs([]);
     }
   }, [isMultiSelecting]);
 
-  const handleJobCardClick = useCallback((job: JobCardType) => {
-    if (isMultiSelecting) {
-      // If in multi-select mode, toggle selection of the clicked job card
-      setSelectedJobs((prevSelected) => {
-        if (prevSelected.includes(job)) {
-          // If the job is already selected, remove it from the selection
-          return prevSelected.filter((j) => j !== job);
-        } else {
-          // If the job is not selected, add it to the selection
-          return [...prevSelected, job];
-        }
-      });
-    } else {
-      setSelectedJobs([]); // If not in multi-select mode, clear the selection
-    }
-  }, [isMultiSelecting]);
+  const handleJobCardClick = useCallback(
+    (job: JobCardType) => {
+      if (isMultiSelecting) {
+        // If in multi-select mode, toggle selection of the clicked job card
+        setSelectedJobs((prevSelected) => {
+          if (prevSelected.includes(job)) {
+            // If the job is already selected, remove it from the selection
+            return prevSelected.filter((j) => j !== job);
+          } else {
+            // If the job is not selected, add it to the selection
+            return [...prevSelected, job];
+          }
+        });
+      } else {
+        setSelectedJobs([]); // If not in multi-select mode, clear the selection
+      }
+    },
+    [isMultiSelecting]
+  );
 
   // Log selected jobs for debugging purposes
   useEffect(() => {
