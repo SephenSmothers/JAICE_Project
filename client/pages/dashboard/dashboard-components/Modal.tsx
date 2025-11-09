@@ -50,6 +50,8 @@ export function Modal({
                     border: "1px solid rgba(255,255,255,0.25)",
                     background: "linear-gradient(180deg, rgba(var(--color-blue-1-rgb),0.96) 0%, rgba(var(--color-blue-2-rgb),0.96) 100%)",
                     boxShadow: "0 18px 44px rgba(0,0,0,0.55)",
+                    display: "flex",
+                    flexDirection: "column",
                     overflow: "hidden",
                 }}
                 onMouseDown={(e) => e.stopPropagation()}
