@@ -42,7 +42,7 @@ async def update_job_stage(
     trace_id = str(uuid.uuid4())
     uid = user.get("uid")
     provider_message_id = payload.get("provider_message_id")
-    new_stage = payload.get("app_stage")
+    new_stage = payload.get("app_stage").capitalize()
 
     if not provider_message_id or not new_stage:
         raise HTTPException(status_code=400, detail="Missing required data")
@@ -60,7 +60,7 @@ async def update_job_stage(
             result = await conn.fetchrow(query, new_stage, provider_message_id, uid)
 
         if result:
-            logging.info(f"[{trace_id}] Updated job {provider_message_id} to stage {new_stage.capitalize()}")
+            logging.info(f"[{trace_id}] Updated job {provider_message_id} to stage {new_stage}")
             return {
                 "status": "success",
                 "updated": dict(result),
