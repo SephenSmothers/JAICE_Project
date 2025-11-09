@@ -140,8 +140,8 @@ async def oauth_callback(request: Request, code: str, state: str):
 
     return RedirectResponse(FRONTEND_DASHBOARD_URL)
 
-def mint_jwt(uid: str) -> str:
-    logging.info(f"Minting RLS JWT for user: {uid}")
+def mint_jwt(uid: str, exp: int | None = None) -> str:
+    logging.info(f"Minting RLS JWT for user.")
     supabase_secret = os.getenv("SUPABASE_JWT_SECRET")
 
     if not supabase_secret:
@@ -150,20 +150,28 @@ def mint_jwt(uid: str) -> str:
             "SUPABASE_JWT_SECRET environment variable is not set. Cannot sign RLS token."
         )
 
-    adjusted_iat = datetime.now(timezone.utc) - timedelta(minutes=2)
-    expiration_time = datetime.now(timezone.utc) + timedelta(
-        days=BACKGROUND_DURATION_DAYS
-    )
+    iat = datetime.now(timezone.utc)
+    adj_iat = iat - timedelta(minutes=2)
+    
+    if exp is not None:
+        expiration_time = iat + timedelta(minutes=exp)
+        logging.debug(f"Frontend JWT created: {expiration_time.isoformat()}")
+    else:
+        expiration_time = iat + timedelta(days=BACKGROUND_DURATION_DAYS)
+        logging.debug(f"Background JWT created: {expiration_time.isoformat()}")
 
     payload = {
         "sub": uid,
         "user_id": uid,
         "role": "authenticated",
-        "iat": int(adjusted_iat.timestamp()),
+        "iat": int(adj_iat.timestamp()),
         "exp": int(expiration_time.timestamp()),
     }
-    logging.debug(f"RLS JWT payload")
-    return jwt.encode(payload, supabase_secret, algorithm=JWT_ALGORITHM)
+    try:
+        return jwt.encode(payload, supabase_secret, algorithm=JWT_ALGORITHM)
+    except Exception as e:
+        logging.error(f"Error encoding JWT for user {uid}: {e}")
+        raise
 
 
 async def phase_2_store_and_respond(
@@ -404,6 +412,15 @@ async def setup_rls_session(
             detail="Critical system error during RLS setup",
         )
 
+@router.post("/setup-frontend-rls-session", summary="Sets up a short-lived RLS JWT for frontend use.")
+async def setup_frontend_rls_session(user: dict = Depends(get_current_user)):
+    uid = user.get("uid")
+    try:
+        rls_jwt = mint_jwt(uid, exp=30)  # 30-minute token for active session
+        return {"status": "success", "rls_jwt": rls_jwt}
+    except Exception as e:
+        logging.error(f"Error minting RLS JWT for user {uid}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to mint RLS session token.")
 
 
 @router.get(

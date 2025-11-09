@@ -4,16 +4,12 @@ import { useCallback, useEffect, useMemo, useState, type JSX } from "react";
 import { ControlBar } from "@/pages/home/home-components/ControlBar";
 import { Column } from "@/pages/home/home-components/Column";
 import { JobCard } from "@/pages/home/home-components/JobCards";
-import type { JobCardType } from "@/pages/home/home-components/JobCards";
-
-import {
-  getLastEmails,
-  convertEmailsToJobCards,
-} from "@/global-services/readEmails";
+import type { JobCardType } from "@/types/jobCardType";
+import { convertToJobCardArray } from "@/pages/home/utils/convertToJobCard";
 import { api } from "@/global-services/api";
-import { transform } from "framer-motion";
-
-//import mockJobs from "./MockJobCards.json";
+import { useJobRealtime } from "@/pages/home/hooks/useJobRealtime";
+import { applyJobChange } from "@/pages/home/utils/applyJobChange";
+import { getCurrentUserInfo } from "@/global-services/auth";
 
 export function HomePage() {
   // State Variables
@@ -32,6 +28,7 @@ export function HomePage() {
 
   const [emailsLoaded, setEmailsLoaded] = useState(false); // to track if emails have been loaded
   const [isLoadingEmails, setIsLoadingEmails] = useState(false); // to prevent multiple email load attempts
+  const [rlsToken, setRlsToken] = useState<string | null>(null); // to hold the RLS JWT token
 
   const sortByOptions = [
     { value: "default", label: "Sort by" },
@@ -41,6 +38,13 @@ export function HomePage() {
     { value: "za", label: "Z - A" },
   ];
 
+  //Loading user data from supabase and setting up web socket for real-time updates
+  //THIS ORDER MATTERS DO NOT SHIFT THE LINES BETWEEN ################################
+  // ###########################################################################################
+  const userInfo = getCurrentUserInfo();
+  const userId = userInfo?.uid || "";
+
+  //Pull emails already in the job apps table
   useEffect(() => {
     loadEmails();
   }, []);
@@ -54,7 +58,7 @@ export function HomePage() {
       const res = await api("/api/jobs/latest-jobs");
 
       if (res.status == "success") {
-        const cards = transformEmailsToJobCards(res.jobs);
+        const cards = convertToJobCardArray(res.jobs);
         console.log("Transformed Job Cards:", cards);
         setJobs(cards);
         setEmailsLoaded(true);
@@ -66,16 +70,73 @@ export function HomePage() {
     }
   }
 
-  function transformEmailsToJobCards(rawJobs: any[] = []): JobCardType[] {
-    return rawJobs.map((job) => ({
-      id: job.id,
-      title: job.title || "No Title",
-      column: job.app_stage || "applied",
-      date: job.received_at
-        ? new Date(job.received_at).toLocaleDateString()
-        : undefined,
-    }));
-  }
+  // Mint rls jwt token for realtime subscription (30 min expiry)
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const res = await api("/api/auth/setup-frontend-rls-session", {
+          method: "POST",
+        });
+        if (!cancelled) setRlsToken(res?.rls_jwt ?? null);
+      } catch (e) {
+        console.error("Failed to mint RLS JWT:", e);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  // Refresh the rls token every 25 minutes
+  // a JWT token will be minted each time the user navigates to the home page
+  // If the user leaves the home page up and running for long periods the token will be refreshed
+  // This ensures that we dont invalidate or miss any realtime updates while the user is active.
+  useEffect(() => {
+    if (!userId) return;
+
+    const REFRESH_MS = 25 * 60 * 1000;
+    let alive = true;
+
+    const tick = async () => {
+      try {
+        // Optional: skip refresh if tab hidden to reduce churn
+        if (document.visibilityState === "hidden") return;
+
+        const res = await api("/api/auth/setup-frontend-rls-session", {
+          method: "POST",
+        });
+        if (alive) {
+          setRlsToken(res?.rls_jwt ?? null);
+          console.log("🔄 Refreshed RLS token");
+        }
+      } catch (e) {
+        console.warn(
+          "RLS token refresh failed; will retry on next interval:",
+          e
+        );
+      }
+    };
+    const id = setInterval(tick, REFRESH_MS);
+
+    // cleanup on unmount / user change
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, [userId]);
+
+  const handleRealtimeChange = useCallback((event: any) => {
+    setJobs((prev) => applyJobChange(prev, event));
+  }, []);
+
+  //subscribe to realtime changes using the rls token
+  useJobRealtime(userId, rlsToken, handleRealtimeChange);
+
+  // ###########################################################################################
 
   // Clear selected jobs when multi-select mode is turned off
   useEffect(() => {
@@ -180,7 +241,7 @@ export function HomePage() {
   const columnConfig = [
     { id: "applied", title: "Applied", bg: "var(--color-light-purple)" },
     { id: "interview", title: "Interview", bg: "var(--color-teal)" },
-    { id: "offers", title: "Offers", bg: "var(--color-dark-purple)" },
+    { id: "offer", title: "Offer", bg: "var(--color-dark-purple)" },
     { id: "accepted", title: "Accepted", bg: "var(--color-blue-gray)" },
   ];
   // Group jobs by their column for rendering

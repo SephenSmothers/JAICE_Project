@@ -5,13 +5,7 @@ import { useCallback, useState } from "react";
 import downChevron from "@/assets/icons/angle-small-down.svg";
 import uncheckIcon from "@/assets/icons/uncheck-icon.svg";
 import checkIcon from "@/assets/icons/check-icon.svg";
-
-export type JobCardType = {
-  id: string;
-  title: string;
-  column: string;
-  date?: string;
-};
+import type { JobCardType } from "@/types/jobCardType";
 
 export function JobCard({
   job,
