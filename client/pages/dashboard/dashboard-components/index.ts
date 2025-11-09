@@ -1,8 +1,11 @@
+// keep named exports from Card (it has named exports like Card, ChartHost)
 export * from "./Card";
-export * from "./GritCard";
-export * from "./AppsByCategoryCard";
-export * from "./AppsOverTimeCard";
-export * from "./AppsByStageCard";
-export * from "./SplitByStageCard";
-export * from "./AvgTimeInStageCard";
-export * from "./AvgAppsPerWeekCard";
+
+// re-export defaults as named
+// export { default as GritCard }            from "./GritCard";
+export { default as AppsByCategoryCard }  from "./AppsByCategoryCard";
+export { default as AppsOverTimeCard }    from "./AppsOverTimeCard";
+// export { default as AppsByStageCard }     from "./AppsByStageCard";
+export { default as SplitByStageCard }    from "./SplitByStageCard";
+export { default as AvgTimeInStageCard }  from "./AvgTimeInStageCard";
+// export { default as AvgAppsPerWeekCard }  from "./AvgAppsPerWeekCard";

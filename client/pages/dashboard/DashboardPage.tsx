@@ -10,18 +10,28 @@ import {
 
 export function DashboardPage() {
   return (
-    <div className="w-full h-full flex justify-center">
+    <div className="w-full h-full overflow-hidden">
       {/* Content Grid */}
-      <main className="mx-auto w-full max-w-7xl px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Row 1 */}
-          <AppsOverTimeCard className="lg:col-span-1" height="18rem" />
-          {/* Row 1 */}
-          {/* Right column stack (two half-height cards) */}
-          <div className="lg:col-span-1 grid grid-rows-2 gap-6">
-
-          </div>
-        </div>
+      <main className={[
+        // Space so NavBar doesn't cover content
+        "pl-[11rem]",
+        // page padding"
+        "px-5 py-6",
+        // full canvas
+        "w-full h-full",
+      ].join(" ")}
+      >
+        {/* 2 x 3 card grid */}
+        <section className={[
+          "w-full h-full",
+          "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 grid-rows-2 gap-6",
+        ].join(" ")}
+        >
+          <AppsOverTimeCard className="h-full" />          
+          <AppsByCategoryCard className="h-full" />          
+          <SplitByStageCard className="h-full" />          
+          <AvgTimeInStageCard className="h-full" />          
+        </section>
       </main>
     </div>
   )
