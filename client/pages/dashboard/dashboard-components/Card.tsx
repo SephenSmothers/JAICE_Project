@@ -115,7 +115,7 @@ export function Card({
                         style={{
                             position: "absolute",
                             right: 8,
-                            top: 8,
+                            top: -16,
                             fontSize: 12,
                             opacity: 0.8,
                         }}
