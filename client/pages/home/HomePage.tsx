@@ -189,9 +189,12 @@ export function HomePage() {
     setIsOver(null);
   };
 
-  const handleDragEnd = () => {
+  const handleDragEnd = async () => {
     // If an item was dragged and is over a different column, update its column
     if (itemDragged && isOver && itemDragged.column !== isOver) {
+      // Create an updated job card with the new column
+      const updatedCard = {...itemDragged, column: isOver };
+
       // Update the job's column in state
       setJobs((prev) =>
         // Find the index of the dragged job and update its column
@@ -200,6 +203,20 @@ export function HomePage() {
           job.id === itemDragged.id ? { ...job, column: isOver } : job
         )
       );
+
+      try {
+        // Send the update to the backend API
+        await api("/api/jobs/update-stage", {
+          method: "POST",
+          body: JSON.stringify({
+            provider_message_id: updatedCard.id,
+            app_stage: updatedCard.column,
+          }),
+        });
+        console.log("Job stage updated successfully");
+      } catch (error) {
+        console.error("Failed to update job stage:", error);
+      }
     }
     // Reset drag state
     setItemDragged(null);
