@@ -11,7 +11,7 @@ export function convertToJobCardArray(rawJobs: any[] = []): JobCardType[] {
 // This single item converter is for processing individual job records from a normal db fetch.
 export function convertToJobCard(rawJob: any): JobCardType {
   return {
-    id: String(rawJob.id),
+    id: String(rawJob.provider_message_id),
     title: rawJob.title || "No Title",
     column: rawJob.app_stage || "applied",
     date: rawJob.received_at
@@ -20,21 +20,21 @@ export function convertToJobCard(rawJob: any): JobCardType {
   };
 }
 
-// This converter processes the broadcase event payload to extract job card info.
+// This converter processes the broadcast event payload to extract job card info.
 export function convertBroadcastToJobCard(event: any): JobCardType | null {
-  const record =
+  const eventRecord =
     event?.payload?.record ??
     event?.payload?.old ??
     null;
 
-  if (!record || !record.id) return null;
+  if (!eventRecord || !eventRecord.provider_message_id) return null;
 
   return {
-    id: String(record.id),
-    title: record.title ?? "No Title",
-    column: record.app_stage ?? "applied",
-    date: record.received_at
-      ? new Date(record.received_at).toLocaleDateString()
+    id: String(eventRecord.provider_message_id),
+    title: eventRecord.title ?? "No Title",
+    column: eventRecord.app_stage ?? "applied",
+    date: eventRecord.received_at
+      ? new Date(eventRecord.received_at).toLocaleDateString()
       : undefined,
   };
 }

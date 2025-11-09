@@ -101,16 +101,20 @@ def insert_into_job_apps_table(trace_id: str, rows: list, user_uid: str) -> dict
     INSERT INTO public.job_applications (
         user_uid, title, company_name, description,
         app_stage, provider_source, recruiter_name, recruiter_email,
-        is_archived, is_deleted, stage_confidence
+        is_archived, is_deleted, stage_confidence,
+        provider_message_id, received_at
     )
     VALUES (
         %s, %s, %s, %s,
         %s, %s, %s, %s,
-        %s, %s, %s
+        %s, %s, %s,
+        %s, NOW()
     )
+    ON CONFLICT (provider_message_id) DO NOTHING;
     """
 
     try:
+        inserted_count = 0
         with get_connection() as conn:
             with conn.cursor() as cur:
                 for row in rows:
@@ -118,7 +122,7 @@ def insert_into_job_apps_table(trace_id: str, rows: list, user_uid: str) -> dict
                         _user_id_enc,
                         _trace_id,
                         provider,
-                        _provider_msg_id,
+                        provider_msg_id,
                         _subject_enc,
                         _sender_enc,
                         _received_at_enc,
@@ -131,24 +135,26 @@ def insert_into_job_apps_table(trace_id: str, rows: list, user_uid: str) -> dict
                         insert_query,
                         (
                             user_uid,
-                            None,
-                            None,
-                            None,
+                            None,  # title
+                            None,  # company_name
+                            None,  # description
                             app_stage,
                             provider,
-                            None,
-                            None,
-                            False,
-                            False,
+                            None,  # recruiter_name
+                            None,  # recruiter_email
+                            False, # is_archived
+                            False, # is_deleted
                             confidence_score,
+                            provider_msg_id,
                         ),
                         prepare=False,
                     )
+                    inserted_count += cur.rowcount
 
                 conn.commit()
 
-        logging.info(f"[{trace_id}] Successfully inserted {len(rows)} rows.")
-        return {"status": "success", "rows": len(rows)}
+        logging.info(f"[{trace_id}] Inserted {inserted_count} rows (duplicates skipped).")
+        return {"status": "success", "inserted": inserted_count}
 
     except Exception as e:
         logging.error(f"[{trace_id}] Error inserting data: {e}")

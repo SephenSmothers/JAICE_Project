@@ -47,7 +47,7 @@ function handleUpdate(prev: JobCardType[], event: any): JobCardType[] {
 
 // Removes job cards that are deleted from the database
 function handleDelete(prev: JobCardType[], event: any): JobCardType[] {
-  const deletedId = event?.payload?.old?.id;
+  const deletedId = event?.payload?.old?.provider_message_id;
   if (!deletedId) {
     console.warn("Delete event missing old.id:", event);
     return prev;
