@@ -125,13 +125,13 @@ def run_relevance_model(trace_id: str, emails: list[dict]) -> RelevanceModelResu
             # For now, we simulate model behavior with a placeholder confidence score.
             
             # ----- Random sequencing for stress testing
-            if index == 0: # force first email to always fail (testing retry logic)
-                raise RuntimeError("Simulated model processing error for stress testing.")
+            # if index == 0: # force first email to always fail (testing retry logic)
+            #     raise RuntimeError("Simulated model processing error for stress testing.")
             
-            if random.random() < 0.02: # random chance of failure for stress testing
-                raise RuntimeError("Simulated model processing error for stress testing.")
+            # if random.random() < 0.02: # random chance of failure for stress testing
+            #     raise RuntimeError("Simulated model processing error for stress testing.")
             
-            model_score = random.uniform(0.7, 0.9) # random confidence score for stress testing
+            model_score = random.uniform(0.8, 0.9) # random confidence score for stress testing
             # ----- Stress test logic ends here
             
             if model_score >= MODEL_CONFIDENCE_THRESHOLD:

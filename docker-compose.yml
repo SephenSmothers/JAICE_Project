@@ -37,7 +37,7 @@ services:
       context: .
       dockerfile: ./shared_worker_library/Dockerfile.worker
     command: >
-      celery -A shared_worker_library.worker.gmail_worker worker -Q gmail_initial_sync_queue -l info -E -n request_intake -c 8
+      celery -A shared_worker_library.worker.gmail_worker worker -Q gmail_initial_sync_queue -l info -E -n request_intake -c 15
     env_file:
       - .env
     depends_on:
@@ -49,7 +49,7 @@ services:
       context: .
       dockerfile: ./shared_worker_library/Dockerfile.worker
     command: >
-      celery -A shared_worker_library.worker.gmail_worker worker -Q gmail_fetch_content_queue -l info -E -n fetch_content -c 8
+      celery -A shared_worker_library.worker.gmail_worker worker -Q gmail_fetch_content_queue -l info -E -n fetch_content -c 15
     env_file:
       - .env
     depends_on:
@@ -61,7 +61,7 @@ services:
       context: .
       dockerfile: ./shared_worker_library/Dockerfile.worker
     command: >
-      celery -A shared_worker_library.worker.relevance_worker worker -Q relevance_model_queue -l info -E -n relevance_model -c 2
+      celery -A shared_worker_library.worker.relevance_worker worker -Q relevance_model_queue -l info -E -n relevance_model -c 3
     env_file:
       - .env
     depends_on:
