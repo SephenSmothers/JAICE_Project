@@ -47,4 +47,4 @@ src/server/.env
 # VS CODE Scripts
 **/.vscode/
 
-relevance/model
+*/model/
