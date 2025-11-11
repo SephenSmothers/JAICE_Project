@@ -1,11 +1,11 @@
 from shared_worker_library.database import get_connection
 from common.logger import get_logger
-from typing import List, Dict
+from typing import List, Dict, Union
 
 logging = get_logger()
 
 
-def get_refresh_token(uid: str) -> str | None:
+def get_refresh_token(uid: str) -> Union[str, None]:
     """Fetches the refresh token for a given user ID."""
     logging.info("Fetching refresh token")
     with get_connection() as conn:
@@ -18,6 +18,7 @@ def get_refresh_token(uid: str) -> str | None:
             row = cur.fetchone()
             logging.info(f"Retrieved refresh token. Found: {row is not None}")
             return row[0] if row else None
+
 
 def can_fetch_emails(uid: str) -> bool:
     """Checks if emails can be fetched for a given user ID."""
@@ -34,14 +35,16 @@ def can_fetch_emails(uid: str) -> bool:
             text = "Yes" if can_fetch else "No"
             logging.info(f"Refresh token exists for user: {text}")
             return can_fetch
-    
+
 
 def insert_staging_records(trace_id: str, encrypted_emails: List[Dict]) -> List[str]:
     """
     Writes a batch of emails into internal_staging.email_staging
     and returns the inserted row IDs.
     """
-    logging.info(f"[{trace_id}] staging: beginning insertion of {len(encrypted_emails)} emails")
+    logging.info(
+        f"[{trace_id}] staging: beginning insertion of {len(encrypted_emails)} emails"
+    )
     insert_sql = """
         INSERT INTO internal_staging.email_staging (
             id, user_id_enc, trace_id, provider, provider_message_id,
@@ -60,11 +63,17 @@ def insert_staging_records(trace_id: str, encrypted_emails: List[Dict]) -> List[
                 conn.autocommit = True
                 with conn.cursor() as cur:
                     cur.execute(insert_sql, record, prepare=False)
-                    inserted_ids.append(cur.fetchone()[0])
+                    row = cur.fetchone()
+                    if row is None:
+                        logging.error(
+                            f"[{trace_id}] staging: no row returned for record: {record}"
+                        )
+                        continue
+                    inserted_ids.append(row[0])
         except Exception as e:
             logging.error(f"[{trace_id}] staging: error inserting emails -> {e}")
             inserted_ids = []
-            
+
     logging.info(
         f"[{trace_id}] staging: inserted {len(inserted_ids)} rows into email_staging"
     )

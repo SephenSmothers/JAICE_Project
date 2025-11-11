@@ -1,6 +1,13 @@
 // import { localfiles } from "@/directory/path/to/localimport";
 
-import { useCallback, useEffect, useMemo, useState, type JSX } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type JSX,
+} from "react";
 import { ControlBar } from "@/pages/home/home-components/ControlBar";
 import { Column } from "@/pages/home/home-components/Column";
 import { JobCard } from "@/pages/home/home-components/JobCards";
@@ -23,9 +30,8 @@ export function HomePage() {
   const [alertMessage] = useState("No Alerts"); // to hold the current alert message
   const [isInfoModalOpen, setInfoModalOpen] = useState(false); // to track if the info modal is open
   const [jobs, setJobs] = useState<JobCardType[]>([]); // to hold the list of job cards (initially set to mock data)
-  const [itemDragged, setItemDragged] = useState<JobCardType | null>(null); // to track the item being dragged
-  const [isOver, setIsOver] = useState<string | null>(null); // to track which column is being hovered over during drag-and-drop
-
+  const itemDraggedRef = useRef<JobCardType | null>(null); // to track the item being dragged
+  const isOverRef = useRef<string | null>(null); // to track which column is being hovered over during drag-and-drop
   const [emailsLoaded, setEmailsLoaded] = useState(false); // to track if emails have been loaded
   const [isLoadingEmails, setIsLoadingEmails] = useState(false); // to prevent multiple email load attempts
   const [rlsToken, setRlsToken] = useState<string | null>(null); // to hold the RLS JWT token
@@ -170,42 +176,35 @@ export function HomePage() {
     console.log("Selected Jobs Updated:", selectedJobs);
   }, [selectedJobs]);
 
-  // Drag and Drop Handlers
   const handleDragStart = (JobCard: JobCardType) => {
-    // Currently we can only drag and manually sort one card at a time.
-    // we have the selected jobs array.
-    // I think in the future we will allow users to drag stacks of cards.
-    // or we can display a pop up menu that allows the user to select quick options that will apply to all selected cards.
-    setItemDragged(JobCard);
+    itemDraggedRef.current = JobCard;
   };
 
   const handleDragEnterColumn = (columnId: string) => {
-    // When a column is entered during drag, set it as the current hovered column
-    setIsOver(columnId);
+    isOverRef.current = columnId;
   };
 
   const handleDragLeaveColumn = () => {
-    // When leaving a column during drag, clear the hovered column state
-    setIsOver(null);
+    isOverRef.current = null;
   };
 
   const handleDragEnd = async () => {
     // If an item was dragged and is over a different column, update its column
-    if (itemDragged && isOver && itemDragged.column !== isOver) {
-      // Create an updated job card with the new column
-      const updatedCard = {...itemDragged, column: isOver };
+    const itemDragged = itemDraggedRef.current;
+    const isOver = isOverRef.current;
 
-      // Update the job's column in state
+    if (itemDragged && isOver && itemDragged.column !== isOver) {
+      console.log(`Dropped item ${itemDragged.id} into column ${isOver}`);
+
+      const updatedCard = { ...itemDragged, column: isOver };
+
       setJobs((prev) =>
-        // Find the index of the dragged job and update its column
         prev.map((job) =>
-          // If the job id matches the dragged item's id, update its column to the new column (isOver)
           job.id === itemDragged.id ? { ...job, column: isOver } : job
         )
       );
 
       try {
-        // Send the update to the backend API
         await api("/api/jobs/update-stage", {
           method: "POST",
           body: JSON.stringify({
@@ -218,10 +217,8 @@ export function HomePage() {
         console.error("Failed to update job stage:", error);
       }
     }
-    // Reset drag state
-    setItemDragged(null);
-    // Reset the hovered column state
-    setIsOver(null);
+    itemDraggedRef.current = null;
+    isOverRef.current = null;
   };
 
   // Column Height Management for Consistent Heights
@@ -255,12 +252,30 @@ export function HomePage() {
 
   // Column configuration for the Kanban board
   // Each column has an id, title, and background color
-  const columnConfig = [
+
+  const baseColumnConfig = [
     { id: "applied", title: "Applied", bg: "var(--color-light-purple)" },
     { id: "interview", title: "Interview", bg: "var(--color-teal)" },
     { id: "offer", title: "Offer", bg: "var(--color-dark-purple)" },
     { id: "accepted", title: "Accepted", bg: "var(--color-blue-gray)" },
   ];
+
+  const columnConfig = useMemo(() => {
+    const hasStagingJobs = jobs.some(
+      (job) => job.column?.toLowerCase() === "staging"
+    );
+
+    const columns = [...baseColumnConfig];
+    if (hasStagingJobs) {
+      columns.push({
+        id: "staging",
+        title: "Processing",
+        bg: "var(--color-light-gray)",
+      });
+    }
+    return columns;
+  }, [jobs]);
+
   // Group jobs by their column for rendering
   // This creates a mapping of column ids to arrays of JobCard components
   // useMemo is used to memoize the result and only recalculate when jobs or columnConfig change

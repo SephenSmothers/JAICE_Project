@@ -1,8 +1,8 @@
-from shared_worker_library.worker.classification_worker import celery_app
+from classification.class_worker import celery_app
 from common.logger import get_logger
 from shared_worker_library.utils.task_definitions import TaskType, EmailStatus, ClassificationModelResult
 from shared_worker_library.db_queries.std_queries import get_encrypted_emails, update_staging_table_failure
-from shared_worker_library.db_queries.classification_queries import update_staging_table
+from classification.class_queries import update_job_app_table
 from typing import List, Dict
 from common.security import decrypt_token
 from shared_worker_library.utils.to_bytes import to_bytes
@@ -48,16 +48,13 @@ def classification_task(trace_id: str, row_ids: list, attempt: int = 1):
         return {"status": "failure", "error": str(e)}
 
     try:
-        results = update_staging_table(trace_id, model_results)
+        results = update_job_app_table(trace_id, model_results)
     except Exception as e:
-        logging.error(f"[{trace_id}] Error updating staging table: {e}")
+        logging.error(f"[{trace_id}] Error updating job_applications table: {e}")
         return {"status": "failure", "error": str(e)}
 
-    try:
-        results = enqueue(trace_id, model_results, attempt)
-    except Exception as e:
-        logging.error(f"[{trace_id}] Error splitting and enqueueing results: {e}")
-        return {"status": "failure", "error": str(e)}
+    # There is no longer a need to enqueue further tasks from here
+    # Classification and NER run concurrently on the raw staging data and update the job_applications table directly.
 
     logging.info(f"[{trace_id}] Classification task completed successfully")
     return {"status": "success", "results": results}
@@ -74,6 +71,7 @@ def decrypt_email_content(trace_id: str, encrypted_emails: List[Dict]) -> List[D
                     "subject": decrypt_token(to_bytes(email["subject_enc"])),
                     "sender": decrypt_token(to_bytes(email["sender_enc"])),
                     "body": decrypt_token(to_bytes(email["body_enc"])),
+                    "provider_message_id": email["provider_message_id"],
                 }
             )
         except Exception as e:
@@ -88,6 +86,7 @@ def normalized_emails_for_model(trace_id: str, emails: list[dict]) -> list[dict]
     #     "subject",                -> email subject
     #     "sender",                 -> email sender
     #     "body",                   -> email body content
+    #     "provider_message_id"     -> unique email identifier from provider used to map directly into the job applications table
     # }
     # For now, we just return the emails as-is.
     return emails
@@ -103,74 +102,41 @@ def run_classification_model(trace_id: str, emails: list[dict]) -> Classificatio
     #
     # The return value should sort the email id's emails["id"] into applied, interview, offer, accepted, rejected, and retry lists.
     # For now, we simulate model behavior with placeholder logic.
-    applied = []
-    interview = []
-    offer = []
-    accepted = []
-    rejected = []
+    applied = {}
+    interview = {}
+    offer = {}
+    accepted = {}
+    rejected = {}
     retry = []
-
-    for index, email in enumerate(emails): #CHANGE TO for email in emails: WITH PROD LOGIC unless index is needed
+    for index, email in enumerate(emails):
         try:
             # This is where the model should ingest the email data and produce a result (binary, confidence score, etc.)
             # This may be adjusted to account for the specific model architecture we choose. Binary, Confidence, Multi-class, etc.
-            # But it should as it's final step produce three lists that sort the email ids into relevant, retry, and purge.
             # For now, we simulate model behavior with a placeholder confidence score.
-            
             choice_list = ["applied", "interview", "offer", "accepted", "rejected"]
             model_choice = random.choice(choice_list)
             
+            confidence = round(random.uniform(0.7, 0.99), 4)
+
+            provider_id = email.get("provider_message_id") # This needs to be returned with the model results to map into job_applications table
+
+            if not provider_id:
+                logging.warning(f"[{trace_id}] Missing provider_message_id for email {email.get('id')}")
+                continue
+            
             if model_choice == "applied":
-                applied.append({"email_id": email["id"]})
+                applied[provider_id] = confidence
             elif model_choice == "interview":
-                interview.append({"email_id": email["id"]})
+                interview[provider_id] = confidence
             elif model_choice == "offer":
-                offer.append({"email_id": email["id"]})
+                offer[provider_id] = confidence
             elif model_choice == "accepted":
-                accepted.append({"email_id": email["id"]})
+                accepted[provider_id] = confidence
             else:
-                rejected.append({"email_id": email["id"]})
+                rejected[provider_id] = confidence
 
         except Exception as e:
             logging.error(f"[{trace_id}] Error processing email: {e}")
             retry.append({"email_id": email["id"]})
 
     return ClassificationModelResult(applied=applied, interview=interview, offer=offer, accepted=accepted, rejected=rejected, retry=retry)
-
-def enqueue(trace_id: str, model_results: ClassificationModelResult, attempt: int):
-    logging.info(f"[{trace_id}] Splitting and enqueueing results")
-    # This function sends tasks to the proper queues based on model results.
-    
-    applied = [item["email_id"] for item in model_results.applied]
-    interview = [item["email_id"] for item in model_results.interview]
-    offer = [item["email_id"] for item in model_results.offer]
-    accepted = [item["email_id"] for item in model_results.accepted]
-    rejected = [item["email_id"] for item in model_results.rejected]
-    retry = [item["email_id"] for item in model_results.retry]
-
-    # Enqueue relevant emails for classification model
-    email_ids = applied + interview + offer + accepted + rejected
-    if email_ids:
-        celery_app.send_task(
-            TaskType.TRANSFER_FROM_STAGING.task_name,
-            args=[trace_id, email_ids],
-            queue=TaskType.TRANSFER_FROM_STAGING.queue_name,
-        )
-
-    # Enqueue retry emails back to classification model with incremented attempt
-    if retry:
-        countdown = (2 ** (attempt - 1)) * 60
-        classification_task.apply_async(
-            args=[trace_id, retry, attempt + 1], countdown=countdown
-        )
-        return
-
-    # Log relevance task enqueueing summary
-    logging.info(
-        f"[{trace_id}] Enqueueing summary: Enqueued {len(relevant_ids)} relevant, {len(retry_ids)} retry, and {len(purge_ids)} purge emails"
-    )
-
-    return {
-        "status": "success",
-        "trace_id": trace_id
-    }

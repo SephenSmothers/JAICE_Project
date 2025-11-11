@@ -6,14 +6,14 @@ logging = get_logger()
 
 MODEL = None
 TOKENIZER = None
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def init_model(model_path: str):
     global MODEL, TOKENIZER
     try:
         MODEL = DistilBertForSequenceClassification.from_pretrained(model_path)
         TOKENIZER = DistilBertTokenizerFast.from_pretrained(model_path)
-        MODEL.to(DEVICE)
+        MODEL.to(DEVICE) # type: ignore
         MODEL.eval()
         logging.info(f"Model loaded on {DEVICE} from {model_path}")
         
@@ -49,4 +49,5 @@ def predict(emails: pd.DataFrame, threshold: float = 0.1):
     new_df = emails.copy()
     new_df['job_probability'] = probs.tolist()
     new_df['prediction'] = (new_df['job_probability'] >= threshold).astype(int)
+    new_df['job_probability'] = new_df['job_probability'].astype(float)
     return new_df

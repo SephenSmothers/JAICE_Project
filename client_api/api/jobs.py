@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Body
+from fastapi import APIRouter, Depends, HTTPException, Body
+from starlette import status
+
 from common.logger import get_logger
 from client_api.services.supabase_client import get_connection
 from client_api.deps.auth import get_current_user
@@ -42,11 +44,15 @@ async def update_job_stage(
     trace_id = str(uuid.uuid4())
     uid = user.get("uid")
     provider_message_id = payload.get("provider_message_id")
-    new_stage = payload.get("app_stage").capitalize()
+    
+    new_stage = payload.get("app_stage")
 
     if not provider_message_id or not new_stage:
         raise HTTPException(status_code=400, detail="Missing required data")
 
+    if new_stage:
+        new_stage = new_stage.capitalize()
+    
     query = """
         UPDATE public.job_applications
         SET app_stage = $1

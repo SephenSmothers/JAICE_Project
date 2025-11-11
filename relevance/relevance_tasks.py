@@ -5,10 +5,10 @@ from shared_worker_library.utils.task_definitions import (
     EmailStatus,
     RelevanceModelResult,
 )
-from relevance.relevance_queries import update_staging_table
+from relevance.relevance_queries import update_job_app_table
 from shared_worker_library.db_queries.std_queries import get_encrypted_emails, update_staging_table_failure
 from common.security import decrypt_token
-from typing import List, Dict
+from typing import List, Dict, cast
 import random
 from shared_worker_library.utils.to_bytes import to_bytes
 import pandas as pd
@@ -61,9 +61,9 @@ def relevance_task(trace_id: str, row_ids: list, attempt: int = 1):
         return {"status": "failure", "error": str(e)}
 
     try:
-        _ = update_staging_table(trace_id, model_results)
+        insert_results = update_job_app_table(trace_id, model_results)
     except Exception as e:
-        logging.error(f"[{trace_id}] Error updating staging table: {e}")
+        logging.error(f"[{trace_id}] Error updating job app table: {e}")
         return {"status": "failure", "error": str(e)}
 
     try:
@@ -74,6 +74,7 @@ def relevance_task(trace_id: str, row_ids: list, attempt: int = 1):
 
     logging.info(f"[{trace_id}] Relevance task completed successfully")
     return {"status": "success", "results": f"Relevant Count: {len(model_results.relevant)}, Retry Count: {len(model_results.retry)}, Purge Count: {len(model_results.purge)}"}
+
 
 def decrypt_email_content(trace_id: str, encrypted_emails: List[Dict]) -> List[Dict]:
     logging.info(f"[{trace_id}] Decrypting email content")
@@ -104,20 +105,26 @@ def normalized_emails_for_model(trace_id: str, emails: list[dict]) -> pd.DataFra
 def run_relevance_model(trace_id: str, emails: pd.DataFrame) -> RelevanceModelResult:
     logging.info(f"[{trace_id}] Running relevance model.")
     
-    relevant = []
+    relevant = {}
     retry = []
     purge = []
     
     try:
         data = predict(emails)
         logging.info(f"[{trace_id}] Relevance model predictions {data[['id', 'job_probability', 'prediction']]}")
-        relevant.extend(data.loc[data['prediction'] == 1, 'id'].tolist())
-        purge.extend(data.loc[data['prediction'] == 0, 'id'].tolist())
+        
+        relevant: Dict[str, float] = {
+            str(row.id): cast(float, row.job_probability)
+            for row in data.itertuples(index=False)
+            if row.prediction == 1
+        }
+        
+        purge = data.loc[data['prediction'] == 0, 'id'].astype(str).tolist()
     
     except Exception as e:
         logging.error(f"[{trace_id}] Error processing email: {e}")
         retry.extend(emails['id'].tolist())
-        relevant = []
+        relevant = {}
         purge = []
 
     return RelevanceModelResult(relevant=relevant, retry=retry, purge=purge)
@@ -125,16 +132,22 @@ def run_relevance_model(trace_id: str, emails: pd.DataFrame) -> RelevanceModelRe
 def enqueue(trace_id: str, model_results: RelevanceModelResult, attempt: int):
     logging.info(f"[{trace_id}] Splitting and enqueueing results.")
     # This function sends tasks to the proper queues based on model results.
-    relevant_ids = [str(email_id) for email_id in model_results.relevant]
+    relevant_ids = list(model_results.relevant.keys())
     retry_ids = [str(email_id) for email_id in model_results.retry]
     purge_ids = [str(email_id) for email_id in model_results.purge]
 
-    # Enqueue relevant emails for classification model
+    # Enqueue relevant emails for ner model
     if relevant_ids:
         celery_app.send_task(
             TaskType.NER_MODEL.task_name,
             args=[trace_id, relevant_ids],
             queue=TaskType.NER_MODEL.queue_name,
+        )
+        
+        celery_app.send_task(
+            TaskType.CLASSIFICATION_MODEL.task_name,
+            args=[trace_id, relevant_ids],
+            queue=TaskType.CLASSIFICATION_MODEL.queue_name,
         )
 
     # Enqueue retry emails back to relevance model with incremented attempt

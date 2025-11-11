@@ -1,8 +1,8 @@
-from shared_worker_library.worker.ner_worker import celery_app
+from ner.ner_worker import celery_app
 from common.logger import get_logger
 from shared_worker_library.utils.task_definitions import TaskType, EmailStatus
 from shared_worker_library.db_queries.std_queries import get_encrypted_emails, update_staging_table_failure
-from shared_worker_library.db_queries.ner_queries import update_staging_table
+from ner.ner_queries import update_job_app_table
 from typing import List, Dict
 from common.security import decrypt_token
 from shared_worker_library.utils.to_bytes import to_bytes
@@ -43,17 +43,14 @@ def ner_task(trace_id: str, row_ids: list):
         return {"status": "failure", "error": str(e)}
 
     try:
-        results = update_staging_table(trace_id, model_results)
+        results = update_job_app_table(trace_id, model_results)
     except Exception as e:
         logging.error(f"[{trace_id}] Error updating staging table: {e}")
         return {"status": "failure", "error": str(e)}
 
-    try:
-        results = enqueue(trace_id, model_results)
-    except Exception as e:
-        logging.error(f"[{trace_id}] Error splitting and enqueueing results: {e}")
-        return {"status": "failure", "error": str(e)}
-
+    # We no longer enqueue for the next model
+    # Classification and NER run in parrallel and can insert into the job applications table independently.
+    
     logging.info(f"[{trace_id}] NER task completed successfully")
     return {"status": "success", "results": results}
 
@@ -89,7 +86,7 @@ def normalized_emails_for_model(trace_id: str, emails: list[dict]) -> list[dict]
     # For now, we just return the emails as-is.
     return emails
 
-def run_ner_model(trace_id: str, emails: list[dict]) -> list[dict]:
+def run_ner_model(trace_id: str, emails: list[dict]) -> list[dict[str, int]]:
     logging.warning(f"[{trace_id}] Running NER model. Functionality not yet implemented.")
     # This is where the NER model logic will sit. It will always receive normalized emails that have been decrypted.
     # It should return a NERModelResult object with relevant, retry, and purge lists.
@@ -110,26 +107,4 @@ def run_ner_model(trace_id: str, emails: list[dict]) -> list[dict]:
     
     For now i'm just returning the email ids as-is.
     '''
-    return [email["id"] for email in emails]
-
-
-def enqueue(trace_id: str, model_results: list[dict]):
-    logging.info(f"[{trace_id}] Enqueueing results NER -> Classification.")
-
-    # Enqueue relevant emails for classification model
-    if model_results:
-        celery_app.send_task(
-            TaskType.CLASSIFICATION_MODEL.task_name,
-            args=[trace_id, model_results],
-            queue=TaskType.CLASSIFICATION_MODEL.queue_name,
-        )
-
-    # Log relevance task enqueueing summary
-    logging.info(
-        f"[{trace_id}] Enqueueing summary: Enqueued {len(model_results)} to CLASSIFICATION tasks."
-    )
-
-    return {
-        "status": "success",
-        "trace_id": trace_id
-    }
+    return [email["provider_message_id"] for email in emails]

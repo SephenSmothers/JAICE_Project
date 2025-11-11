@@ -2,15 +2,14 @@ from typing import List, Dict, Iterable
 from contextlib import contextmanager
 from dataclasses import dataclass
 import os, base64, time, requests, random, redis, uuid
-from shared_worker_library.worker.gmail_worker import celery_app
+from gmail.gmail_worker import celery_app
 from google.oauth2.credentials import Credentials
 from common.security import encrypt_token, decrypt_token
 from googleapiclient.discovery import build
 from shared_worker_library.utils.task_definitions import TaskType, EmailStatus
 from common.logger import get_logger
-from shared_worker_library.db_queries.gmail_queries import get_refresh_token, insert_staging_records, can_fetch_emails
-from enum import Enum
-from datetime import datetime, timedelta
+from gmail.gmail_queries import get_refresh_token, insert_staging_records, can_fetch_emails
+from datetime import datetime
 
 logging = get_logger()
 
@@ -22,7 +21,11 @@ GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 
+
 REDIS_URL = os.getenv("CELERY_BROKER_URL")
+if not REDIS_URL:
+    raise ValueError("CELERY_BROKER_URL environment variable is not set.")
+
 r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
 
 
@@ -412,7 +415,7 @@ def prepare_staging_payload(trace_id: str, parsed_emails: List[Dict]) -> List[Di
     return encrypted
 
 
-def write_to_staging(trace_id: str, encrypted_emails: List[Dict]) -> List[int]:
+def write_to_staging(trace_id: str, encrypted_emails: List[Dict]) -> List[str]:
     """
     Writes the batch to the staging table and returns the list of inserted row IDs.
     """

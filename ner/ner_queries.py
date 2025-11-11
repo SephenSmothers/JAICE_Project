@@ -4,8 +4,8 @@ from common.logger import get_logger
 
 logging = get_logger()
 
-def update_staging_table(trace_id: str, model_results: dict):
-    logging.info(f"[{trace_id}] Updating staging table with NER Model Results.")
+def update_job_app_table(trace_id: str, model_results: list[dict[str, int]]):
+    logging.info(f"[{trace_id}] Updating job application table with NER Model Results.")
     '''
     with get_connection() as conn:
         with conn.cursor() as cur:
@@ -23,5 +23,5 @@ def update_staging_table(trace_id: str, model_results: dict):
             We may also branch this into multiple functions, 1 to update the status and stage, 1 to update the extracted entities. and have this method call both.
         conn.commit()
     '''
-    logging.info(f"[{trace_id}] Staging table updated with NER results.")
+    logging.info(f"[{trace_id}] Job application table updated with NER results.")
     return {"status": "updated"}

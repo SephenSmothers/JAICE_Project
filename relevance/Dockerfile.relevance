@@ -7,10 +7,10 @@ RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
 
 WORKDIR /app
 
-COPY ./shared_worker_library/req.txt ./shared_worker_library/req.txt
+COPY ./shared_worker_library/shared_req.txt ./shared_worker_library/shared_req.txt
 COPY ./relevance/req.txt ./relevance/req.txt
 
-RUN pip install --no-cache-dir -r ./shared_worker_library/req.txt
+RUN pip install --no-cache-dir -r ./shared_worker_library/shared_req.txt
 RUN pip install --no-cache-dir -r ./relevance/req.txt
 
 COPY ./relevance ./relevance

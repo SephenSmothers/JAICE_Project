@@ -8,7 +8,7 @@ logging = get_logger()
 MODEL_LOADED = False
 NLP_MODEL = None
 
-@celery_app.on_after_configure.connect
+@celery_app.on_after_configure.connect # type: ignore[attr-defined]
 def load_model_on_worker_start(**_):
     logging.info("Loading relevance model on worker start")
     global MODEL_LOADED, NLP_MODEL
@@ -19,12 +19,7 @@ def load_model_on_worker_start(**_):
     try:
         init_model("relevance/model/relevance_v2")
         
-        try:
-            spacy.require_gpu()
-            logging.info("Using GPU for spaCy model")
-            
-        except Exception:
-            logging.info("Using CPU for spaCy model")
+        logging.info("Loading NER model spacy on CPU...")
         
         NLP_MODEL = spacy.load("en_core_web_lg")
         MODEL_LOADED = True
