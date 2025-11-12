@@ -91,6 +91,7 @@ export function JobCard({
         scale: 1.05,
         boxShadow: "0px 5px 15px rgba(0,0,0,0.3)",
         pointerEvents: "none",
+        zIndex: 1000,
       }}
       dragSnapToOrigin
       layout
