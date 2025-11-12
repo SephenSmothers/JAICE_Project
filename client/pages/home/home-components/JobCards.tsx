@@ -42,7 +42,6 @@ export function JobCard({
     onDragEnd();
   }, [onDragEnd]);
 
-
   // Needs elevated to global css
   const iconStyle = {
     filter:
@@ -57,8 +56,12 @@ export function JobCard({
   };
 
   const variants = {
-    active: {opacity: 1, scale: 1, filter: "none"},
-    dimmed: {opacity: 0.35, scale: 0.98, filter: "grayscale(40%) brightness(80%)"},
+    active: { opacity: 1, scale: 1, filter: "none" },
+    dimmed: {
+      opacity: 0.35,
+      scale: 0.98,
+      filter: "grayscale(40%) brightness(80%)",
+    },
   };
 
   return (
@@ -78,7 +81,7 @@ export function JobCard({
       // onTap cycles between expanding the card and selecting it based on isMultiSelecting
       onTap={() => {
         handleMultiSelectClick(job);
-        if(isMultiSelecting) {
+        if (isMultiSelecting) {
           setIsSelected(!isSelected);
           return;
         } else {
@@ -99,12 +102,8 @@ export function JobCard({
       {/* Main Card Container Above (wraps all content) */}
 
       <div className="flex justify-between w-full items-center text-left">
-        <motion.div
-          className="flex items-center gap-2 "
-          layout
-        >
+        <motion.div className="flex items-center gap-2 " layout>
           {/* This Motion Div (above) is to wrap the title and the checkbox so we get smooth animation without affecting the open/close chevron*/}
-
 
           <AnimatePresence>
             {/* This animates in the checkbox when we are in multi-select mode */}
@@ -117,7 +116,7 @@ export function JobCard({
                 initial={{ opacity: 0, scale: 0.5 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.5 }}
-                layout 
+                layout
               />
             ) : null}
           </AnimatePresence>
@@ -129,7 +128,6 @@ export function JobCard({
               <small className="text-gray-400 opacity-75">{job.date}</small>
             )}
           </div>
-
         </motion.div>
 
         {/* Chevron to expand/collapse job card details rotates via it's style argument */}
@@ -142,35 +140,41 @@ export function JobCard({
       </div>
 
       {/* Expanded Job Related Content */}
-      {isOpen ? (
-        <>
-          <div className="w-99/100 border-b my-2" />
-          <div className="flex flex-col text-left w-full gap-1">
-            <small>Small Startup</small>
-            <small>Recruiter</small>
-            <a 
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                openMessage(job.id);
-              }}
-                className="hover:underline text-sm cursor-pointer"
-                style={{
-                  color: 'var(--color-blue-5)',
-                  transition: 'color 0.25s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = 'var(--color-blue-4)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = 'var(--color-blue-5)';
-                }}
-              >
-              View Email
-            </a>
-          </div>
-        </>
-      ) : null}
+      <motion.div
+        className="overflow-hidden w-full"
+        animate={{
+          height: isOpen ? "auto" : 0,
+          opacity: isOpen ? 1 : 0,
+        }}
+        initial={false}
+        transition={{ type: "spring", stiffness: 200, damping: 24 }}
+      >
+        <div className="w-99/100 border-b my-2" />
+        <div className="flex flex-col text-left w-full gap-1 pb-2">
+          <small>Small Startup</small>
+          <small>Recruiter</small>
+          <a
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              openMessage(job.id);
+            }}
+            className="hover:underline text-sm cursor-pointer"
+            style={{
+              color: "var(--color-blue-5)",
+              transition: "color 0.25s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = "var(--color-blue-4)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = "var(--color-blue-5)";
+            }}
+          >
+            View Email
+          </a>
+        </div>
+      </motion.div>
     </motion.div>
   );
 }

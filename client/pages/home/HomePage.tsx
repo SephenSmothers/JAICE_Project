@@ -39,6 +39,15 @@ export function HomePage() {
   const [rlsToken, setRlsToken] = useState<string | null>(null); // to hold the RLS JWT token
   const [sortedJobs, setSortedJobs] = useState<JobCardType[]>([]); // to hold the sorted list of job cards
   const [filteredJobs, setFilteredJobs] = useState<JobCardType[]>([]); // to hold the filtered list of job cards based on search
+  const [viewportHeight, setViewportHeight] = useState(
+    () => window.innerHeight
+  );
+
+  useEffect(() => {
+    const handleResize = () => setViewportHeight(window.innerHeight);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const sortByOptions = [
     { value: "default", label: "Sort by" },
@@ -99,8 +108,8 @@ export function HomePage() {
     const matchedIdsSet = new Set(strongMatches.map((r) => r.item.id));
 
     const filtered = sorted
-      .filter((job) => matchedIdsSet.has(job.id)) 
-      .map((job) => job); 
+      .filter((job) => matchedIdsSet.has(job.id))
+      .map((job) => job);
 
     setSortedJobs(sorted);
     setFilteredJobs(filtered);
@@ -283,39 +292,24 @@ export function HomePage() {
     itemDraggedRef.current = null;
     isOverRef.current = null;
   };
-
-  // Column Height Management for Consistent Heights
-  // This ensures all columns have the same height based on the tallest column
-  // This prevents layout shifts when dragging items between columns of different heights
   const [columnHeights, setColumnHeights] = useState<Record<string, number>>(
     {}
   );
 
-  // Calculate the maximum height among all columns
   const sharedHeight = useMemo(
-    // Return the largest, 0 or the max height found in columnHeights
     () => Math.max(0, ...Object.values(columnHeights)),
-    // Recalculate when columnHeights changes (insert/removal of job cards)
     [columnHeights]
   );
 
-  // Callback to report a column's height
-  // This is passed down to each Column component which calls it with its id and measured height
-  // useCallback is used to memoize the function and prevent unnecessary re-renders
-  // It only changes if setColumnHeights changes (which it won't)
   const handleReportHeight = useCallback((columnId: string, height: number) => {
-    // Update the columnHeights state with the new height for the given columnId
     setColumnHeights((prev) => {
-      // Only update if the height has changed to prevent unnecessary re-renders
       if (prev[columnId] === height) return prev;
-      // Return a new object with the updated height for the specified columnId
       return { ...prev, [columnId]: height };
     });
   }, []);
 
   // Column configuration for the Kanban board
   // Each column has an id, title, and background color
-
   const baseColumnConfig = [
     { id: "applied", title: "Applied", bg: "var(--color-light-purple)" },
     { id: "interview", title: "Interview", bg: "var(--color-teal)" },
@@ -448,8 +442,9 @@ export function HomePage() {
                 count={jobsByColumn[column.id]?.length || 0} // pass down the count of job cards in the column
                 onDragEnter={handleDragEnterColumn} // pass down drag enter handler
                 onDragLeave={handleDragLeaveColumn} // pass down drag leave handler
-                sharedHeight={sharedHeight} // pass down the shared height for consistent column heights
-                reportHeight={handleReportHeight} // pass down the height reporting callback
+                sharedHeight={sharedHeight}
+                reportHeight={handleReportHeight}
+                viewportHeight={viewportHeight}
               >
                 {jobsByColumn[column.id]}{" "}
                 {/* render the JobCards associated with the columns id */}
