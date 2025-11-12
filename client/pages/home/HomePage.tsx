@@ -271,7 +271,7 @@ export function HomePage() {
         await api("/api/jobs/update-stage", {
           method: "POST",
           body: JSON.stringify({
-            provider_message_id: updatedCard.id,
+            provider_message_ids: [updatedCard.id],
             app_stage: updatedCard.column,
           }),
         });
