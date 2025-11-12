@@ -6,11 +6,13 @@ export default function Button({
   children,
   isSelected = false,
   type = "button",
+  style = {}, 
 }: {
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   children: React.ReactNode;
   isSelected?: boolean;
   type?: "button" | "submit" | "reset";
+  style?: React.CSSProperties;
 }) {
   const selectedClass = isSelected ? "selected" : "";
   return (
@@ -18,6 +20,7 @@ export default function Button({
       type={type}
       onClick={(event) =>  onClick?.(event) }
       className={`${selectedClass}`}
+      style={style}
     >
       {children}
     </button>
