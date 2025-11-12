@@ -50,7 +50,7 @@ def get_data_from_staging(trace_id: str, row_ids: list[str]) -> list[tuple]:
         provider_message_id,
         subject_enc,
         sender_enc,
-        received_at_enc,
+        received_at,
         body_enc
     FROM internal_staging.email_staging
     WHERE id = ANY(%s);

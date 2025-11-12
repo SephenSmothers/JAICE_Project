@@ -406,7 +406,7 @@ def prepare_staging_payload(trace_id: str, parsed_emails: List[Dict]) -> List[Di
                 "provider_message_id": e["provider_message_id"],
                 "subject_enc": encrypt_token(e["subject"]),
                 "sender_enc": encrypt_token(e["sender"]),
-                "received_at_enc": encrypt_token(e["received_at"]),
+                "received_at": e["received_at"],
                 "body_enc": encrypt_token(e["body_text"]),
                 "status": EmailStatus.AWAIT_RELEVANCE.value,
             }

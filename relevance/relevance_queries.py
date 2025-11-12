@@ -1,3 +1,4 @@
+import re
 from shared_worker_library.db_queries.transfer_query import execute_transfer_query
 from shared_worker_library.db_queries.std_queries import get_data_from_staging
 from common.security import decrypt_token
@@ -44,23 +45,13 @@ def update_job_app_table(trace_id: str, model_results: RelevanceModelResult):
                 provider_message_id,
                 _subject_enc,
                 _sender_enc,
-                received_at_enc,
+                received_at,
                 _body_enc,
             ) = row
 
             # Map only minimal known fields
             provider_source = provider or "gmail"
             relevance_conf = float(model_results.relevant.get(str(staging_id), 0.0))
-
-            # Parse timestamp or use fallback
-            try:
-                received_at = (
-                    datetime.fromisoformat(received_at_enc)
-                    if received_at_enc
-                    else datetime.now(timezone.utc)
-                )
-            except Exception:
-                received_at = datetime.now(timezone.utc)
 
             # Build tuple aligned with job_applications schema
             values.append(
