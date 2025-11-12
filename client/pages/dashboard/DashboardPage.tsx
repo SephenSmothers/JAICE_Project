@@ -1,13 +1,37 @@
-// import { localfiles } from "@/directory/path/to/localimport";
+import {
+  GritCard,
+  AppsByCategoryCard,
+  AppsOverTimeCard,
+  AppsByStageCard,
+  SplitByStageCard,
+  AvgTimeInStageCard,
+  AvgAppsPerWeekCard,
+} from "./dashboard-components";
 
 export function DashboardPage() {
-
   return (
-    <div className="w-full h-full flex items-center justify-center flex-col gap-4 bg-orange-300"
-    style={{background: "var(--color-bg)"}}>
-      <h1 className="text-4xl font-bold">Dashboard Page</h1>
+    <div className="w-full h-screen overflow-hidden">
+      {/* Content Grid */}
+      <main className="pl-[11rem] px-6 py-6 w-full h-full">
+        {/* Top: Grit score */}
+        <section className="mb-6 grid grid-cols-1 xl:grid-cols-3">
+          <div className="xl:col-span-3">
+            <GritCard height="18rem"/>
+          </div>
+        </section>
+
+        {/* 2 x 3 card grid */}
+        <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 grid-rows-2 gap-6">
+          <AppsOverTimeCard className="h-full" />          
+          <AppsByCategoryCard className="h-full" />          
+          <SplitByStageCard className="h-full" />          
+          <AvgTimeInStageCard className="h-full" />          
+          <AppsByStageCard className="h-full" />          
+          <AvgAppsPerWeekCard className="h-full" />          
+        </section>
+      </main>
     </div>
-  );
+  )
 }
 
-//this wouldn't actually end up in this file, just an example of how to use the router
+export default DashboardPage;

@@ -24,7 +24,6 @@ async def get_current_user(creds: HTTPAuthorizationCredentials = Depends(bearer)
         logging.error(f"Token verification failed: {e}")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid/expired token")
 
-
 async def get_user_from_token_query(token: str):
     if not token:
         logging.info("No token provided")
