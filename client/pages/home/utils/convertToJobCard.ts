@@ -17,6 +17,8 @@ export function convertToJobCard(rawJob: any): JobCardType {
     date: rawJob.received_at
       ? new Date(rawJob.received_at).toLocaleDateString()
       : undefined,
+    isArchived: rawJob.is_archived || false,
+    isDeleted: rawJob.is_deleted || false,
   };
 }
 
@@ -36,5 +38,7 @@ export function convertBroadcastToJobCard(event: any): JobCardType | null {
     date: eventRecord.received_at
       ? new Date(eventRecord.received_at).toLocaleDateString()
       : undefined,
+    isArchived: eventRecord.is_archived || false,
+    isDeleted: eventRecord.is_deleted || false,
   };
 }

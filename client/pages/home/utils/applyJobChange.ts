@@ -39,6 +39,13 @@ function handleUpdate(prev: JobCardType[], event: any): JobCardType[] {
     return prev;
   }
 
+  if (updatedCard.isArchived || updatedCard.isDeleted) {
+    console.log(
+      `Update: card ${updatedCard.id} marked archived/deleted, removing from view.`
+    );
+    return prev.filter((c) => String(c.id) !== String(updatedCard.id));
+  }
+
   console.log(`Update: replaced card with id ${updatedCard.id}`, updatedCard);
   return prev.map((c) =>
     String(c.id) === String(updatedCard.id) ? updatedCard : c

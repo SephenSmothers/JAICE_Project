@@ -5,4 +5,6 @@ export type JobCardType = {
   title: string;
   column: string;
   date?: string;
+  isArchived?: boolean;
+  isDeleted?: boolean;
 };

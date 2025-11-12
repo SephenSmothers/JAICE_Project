@@ -17,6 +17,7 @@ import { api } from "@/global-services/api";
 import { useJobRealtime } from "@/pages/home/hooks/useJobRealtime";
 import { applyJobChange } from "@/pages/home/utils/applyJobChange";
 import { getCurrentUserInfo } from "@/global-services/auth";
+import { MultiSelectBar } from "@/pages/home/home-components/MultiSelectBar";
 
 export function HomePage() {
   // State Variables
@@ -177,6 +178,7 @@ export function HomePage() {
   }, [selectedJobs]);
 
   const handleDragStart = (JobCard: JobCardType) => {
+    setIsMultiSelecting(false);
     itemDraggedRef.current = JobCard;
   };
 
@@ -372,6 +374,13 @@ export function HomePage() {
           )}
         </div>
       </div>
+      {isMultiSelecting && (
+        <MultiSelectBar
+          selectedJobs={selectedJobs}
+          setSelectedJobs={setSelectedJobs}
+          setIsMultiSelecting={setIsMultiSelecting}
+        />
+      )}
     </div>
   );
 }
