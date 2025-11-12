@@ -13,12 +13,14 @@ export function JobCard({
   onDragEnd,
   isMultiSelecting,
   handleMultiSelectClick,
+  dimmed,
 }: {
   job: JobCardType;
   onDragStart: (job: JobCardType) => void;
   onDragEnd: () => void;
   isMultiSelecting: boolean;
   handleMultiSelectClick: (job: JobCardType) => void;
+  dimmed: boolean;
 }) {
   const [isSelected, setIsSelected] = useState(false); // Placeholder for selection state
   const [isOpen, setIsOpen] = useState(false); // State to manage expanded/collapsed view
@@ -54,22 +56,20 @@ export function JobCard({
     window.open(url, "_blank");
   };
 
-  // These are added here to ensure there is no conflict with commits
-  //    --color-card-bg: #1D1B20;
-  //    --color-card-bg-rgb: 29, 27, 32;
+  const variants = {
+    active: {opacity: 1, scale: 1, filter: "none"},
+    dimmed: {opacity: 0.35, scale: 0.98, filter: "grayscale(40%) brightness(80%)"},
+  };
 
-
-  // onDragStart and onDragEnd are used to manage the drag state in the parent component
-  // whileHover and whileTap provide visual feedback during interaction
-  // dragSnapToOrigin ensures the card returns to its original position if not dropped in a valid area
-  // layout enables smooth animations when cards are added or removed
   return (
     <motion.div
       id={job.id}
-      className="border w-full p-4 rounded shadow-sm bg-[#1D1B20] flex items-center flex flex-col"
+      className={`border w-full p-4 rounded shadow-sm bg-[#1D1B20] flex items-center flex flex-col`}
       drag
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
+      variants={variants}
+      animate={dimmed ? "dimmed" : "active"}
       whileHover={{
         scale: 1.02,
         boxShadow: "0px 3px 10px rgba(0,0,0,0.2)",

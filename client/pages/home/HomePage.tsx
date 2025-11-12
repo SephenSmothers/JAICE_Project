@@ -18,6 +18,7 @@ import { useJobRealtime } from "@/pages/home/hooks/useJobRealtime";
 import { applyJobChange } from "@/pages/home/utils/applyJobChange";
 import { getCurrentUserInfo } from "@/global-services/auth";
 import { MultiSelectBar } from "@/pages/home/home-components/MultiSelectBar";
+import Fuse from "fuse.js";
 
 export function HomePage() {
   // State Variables
@@ -36,6 +37,8 @@ export function HomePage() {
   const [emailsLoaded, setEmailsLoaded] = useState(false); // to track if emails have been loaded
   const [isLoadingEmails, setIsLoadingEmails] = useState(false); // to prevent multiple email load attempts
   const [rlsToken, setRlsToken] = useState<string | null>(null); // to hold the RLS JWT token
+  const [sortedJobs, setSortedJobs] = useState<JobCardType[]>([]); // to hold the sorted list of job cards
+  const [filteredJobs, setFilteredJobs] = useState<JobCardType[]>([]); // to hold the filtered list of job cards based on search
 
   const sortByOptions = [
     { value: "default", label: "Sort by" },
@@ -44,6 +47,64 @@ export function HomePage() {
     { value: "az", label: "A - Z" },
     { value: "za", label: "Z - A" },
   ];
+
+  const sortJobs = useCallback(
+    (list: JobCardType[]) => {
+      switch (selectedOption) {
+        case "new":
+          return [...list].sort(
+            (a, b) =>
+              new Date(b.date ?? "").getTime() -
+              new Date(a.date ?? "").getTime()
+          );
+        case "old":
+          return [...list].sort(
+            (a, b) =>
+              new Date(a.date ?? "").getTime() -
+              new Date(b.date ?? "").getTime()
+          );
+        case "az":
+          return [...list].sort((a, b) => a.title.localeCompare(b.title));
+        case "za":
+          return [...list].sort((a, b) => b.title.localeCompare(a.title));
+        default:
+          return list;
+      }
+    },
+    [selectedOption]
+  );
+
+  const fuse = useMemo(() => {
+    return new Fuse<JobCardType>(jobs, {
+      keys: ["title", "column", "date"],
+      includeScore: true,
+      threshold: 0.1,
+      ignoreLocation: true,
+      useExtendedSearch: true,
+    });
+  }, [jobs]);
+
+  useEffect(() => {
+    const sorted = sortJobs(jobs);
+
+    if (!searchQuery.trim()) {
+      setSortedJobs(sorted);
+      setFilteredJobs(sorted);
+      return;
+    }
+
+    const results = fuse.search(searchQuery);
+
+    const strongMatches = results.filter((r) => (r.score ?? 1) <= 0.4);
+    const matchedIdsSet = new Set(strongMatches.map((r) => r.item.id));
+
+    const filtered = sorted
+      .filter((job) => matchedIdsSet.has(job.id)) 
+      .map((job) => job); 
+
+    setSortedJobs(sorted);
+    setFilteredJobs(filtered);
+  }, [jobs, searchQuery, selectedOption, fuse, sortJobs]);
 
   //Loading user data from supabase and setting up web socket for real-time updates
   //THIS ORDER MATTERS DO NOT SHIFT THE LINES BETWEEN ################################
@@ -278,33 +339,56 @@ export function HomePage() {
     return columns;
   }, [jobs]);
 
+  const matchOrderMap = useMemo(() => {
+    const map = new Map<string, number>();
+    filteredJobs.forEach((job, idx) => map.set(job.id, idx));
+    return map;
+  }, [filteredJobs]);
+
   // Group jobs by their column for rendering
   // This creates a mapping of column ids to arrays of JobCard components
   // useMemo is used to memoize the result and only recalculate when jobs or columnConfig change
   const jobsByColumn = useMemo(() => {
-    // Reduce the columnConfig array into an object mapping column ids to arrays of JobCard components
     return columnConfig.reduce<Record<string, JSX.Element[]>>((acc, column) => {
-      // Filter jobs to those that belong to the current column and map them to JobCard components
-      acc[column.id] = jobs
-        .filter((job) => job.column.toLowerCase() === column.id) // filter jobs by column id
-        .map(
-          (
-            job // map each job to a JobCard component
-          ) => (
-            <JobCard
-              key={job.id} // unique key for React
-              job={job} // pass down the job data
-              onDragStart={handleDragStart} // pass down the drag start handler
-              onDragEnd={handleDragEnd} // pass down the drag end handler
-              isMultiSelecting={isMultiSelecting} // pass down multi-select state
-              handleMultiSelectClick={handleJobCardClick} // handle job card click for selection
-            />
-          )
-        );
-      // Return the accumulated object for the next iteration (i.e. the next column)
+      const jobsInColumn = sortedJobs.filter(
+        (job) => job.column.toLowerCase() === column.id
+      );
+
+      const orderedJobs = [...jobsInColumn].sort((a, b) => {
+        const aMatched = matchOrderMap.has(a.id);
+        const bMatched = matchOrderMap.has(b.id);
+
+        if (aMatched && !bMatched) return -1;
+        if (!aMatched && bMatched) return 1;
+        if (aMatched && bMatched)
+          return (
+            (matchOrderMap.get(a.id) ?? 0) - (matchOrderMap.get(b.id) ?? 0)
+          );
+        return 0;
+      });
+
+      acc[column.id] = orderedJobs.map((job) => (
+        <JobCard
+          key={job.id}
+          job={job}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          isMultiSelecting={isMultiSelecting}
+          handleMultiSelectClick={handleJobCardClick}
+          dimmed={!!searchQuery && !matchOrderMap.has(job.id)}
+        />
+      ));
+
       return acc;
     }, {});
-  }, [jobs, columnConfig, isMultiSelecting, handleJobCardClick]);
+  }, [
+    sortedJobs,
+    matchOrderMap,
+    columnConfig,
+    isMultiSelecting,
+    handleJobCardClick,
+    searchQuery,
+  ]);
 
   // show loading state while emails are being fetched
   if (isLoadingEmails) {
