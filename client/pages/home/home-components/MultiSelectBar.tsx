@@ -126,11 +126,12 @@ export function MultiSelectBar({
   };
 
   return (
-  
-    <div className={
+    <div
+      className={
         className ||
-        "fixed bottom-2 w-1/2 md:w-[40rem] justify-center items-center flex flex-col bg-black/60 rounded-xl p-3 gap-2"
-      }>
+        "fixed bottom-2 w-1/2 md:w-[40rem] justify-center items-center flex flex-col bg-black/60 rounded-xl p-3 gap-2 backdrop-blur-md border border-white/10 shadow-lg"
+      }
+    >
       {/* Button area */}
       <div className="relative w-full">
         <AnimatePresence mode="wait">
@@ -204,10 +205,7 @@ export function MultiSelectBar({
                   }
                   onMouseLeave={() => setHoverAction(null)}
                 >
-                  <button
-                    key={stage}
-                    onClick={() => handleMove(stage)}
-                  >
+                  <button key={stage} onClick={() => handleMove(stage)}>
                     {stage}
                   </button>
                 </div>
