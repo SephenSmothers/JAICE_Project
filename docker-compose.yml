@@ -76,7 +76,7 @@ services:
       context: .
       dockerfile: ./classification/Dockerfile.classification
     command: >
-      celery -A classification.class_worker worker -Q classification_model_queue -l info -E -n classification_model -c 15
+      celery -A classification.class_worker worker -Q classification_model_queue -l info -E -n classification_model -c 1
     env_file:
       - .env
     depends_on:
@@ -88,7 +88,7 @@ services:
       context: .
       dockerfile: ./ner/Dockerfile.ner
     command: >
-      celery -A ner.ner_worker worker -Q ner_model_queue -l info -E -n ner_model -c 15
+      celery -A ner.ner_worker worker -Q ner_model_queue -l info -E -n ner_model -c 2
     env_file:
       - .env
     depends_on:

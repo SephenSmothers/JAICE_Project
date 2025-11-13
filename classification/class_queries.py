@@ -1,8 +1,24 @@
 from shared_worker_library.db_queries.transfer_query import execute_transfer_query
 from common.logger import get_logger
-from shared_worker_library.utils.task_definitions import EmailStage, ClassificationModelResult
+from shared_worker_library.utils.task_definitions import (EmailStage, ClassificationModelResult)
 
 logging = get_logger()
+
+
+def to_percent(value):
+    """ convert a float value (0.0 to 1.0) to an integer percent (0 to 100) """
+    try:
+        if value is None:
+            return None
+        
+        v = float(value)
+
+        if 0.0 <= v <= 1.0:
+            return int(v * 100)
+        return int(v)
+    
+    except Exception:
+        return None
 
 def update_job_app_table(trace_id: str, model_results: ClassificationModelResult):
     """
@@ -21,11 +37,14 @@ def update_job_app_table(trace_id: str, model_results: ClassificationModelResult
         (EmailStage.REJECTED, model_results.rejected),
     ]:
         # stage_dict is now a mapping of {provider_message_id: confidence}
-        for provider_id, confidence in stage_dict.items():
+        for email in stage_dict:
             values.append((
-                stage.value,        # app_stage
-                confidence,         # stage_confidence
-                provider_id         # provider_message_id
+                stage.value,
+                email.get("top_score"),
+                email.get("second_score"),
+                email.get("second_label"),
+                email.get("needs_review"), 
+                email.get("provider_message_id"),  # provider_message_id
             ))
 
     if not values:
@@ -36,7 +55,9 @@ def update_job_app_table(trace_id: str, model_results: ClassificationModelResult
     UPDATE public.job_applications
     SET app_stage = %s,
         stage_confidence = %s,
-        updated_at = timezone('utc', now())
+        stage_confidence_secondary = %s,
+        app_stage_secondary = %s,
+        needs_review = %s
     WHERE provider_message_id = %s;
     """
 

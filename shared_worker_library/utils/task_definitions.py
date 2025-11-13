@@ -41,9 +41,9 @@ class RelevanceModelResult:
 
 @dataclass
 class ClassificationModelResult:
-    applied: Dict[str, float]
-    interview: Dict[str, float]
-    offer: Dict[str, float]
-    accepted: Dict[str, float]
-    rejected: Dict[str, float]
+    applied: list
+    interview: list
+    offer: list
+    accepted: list
+    rejected: list
     retry: list
