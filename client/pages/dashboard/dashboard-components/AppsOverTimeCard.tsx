@@ -12,10 +12,14 @@ export function AppsOverTimeCard({ className = "", height }: { className?: strin
         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
     const colors = {
-        applied: cssVar("--color-light-purple"),
-        interview: cssVar("--color-teal"),
-        offer: cssVar("--color-dark-purple"),
-        accepted: cssVar("--color-blue-gray"),
+        applied: "#F59E0B", 
+        interview: "#22D3EE", 
+        offer: "#A78BFA", 
+        accepted: "#34D399", 
+        grid: "rgba(148,163,184,0.18", 
+        ticks: "#CBD5E1", 
+        legend: "#E5E7EB", 
+        tooltipBg: "#rgba(17,24,39,0.95)", 
     };
 
     const data = {
