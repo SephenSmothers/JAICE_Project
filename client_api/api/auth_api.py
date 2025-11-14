@@ -1,4 +1,5 @@
 import json
+import re
 import uuid
 import os, jwt, httpx
 from datetime import datetime, timedelta, timezone
@@ -41,9 +42,12 @@ def get_oauth_consent_url(user: dict = Depends(get_user_from_token_query)):
     logging.info(f"Generating OAuth2 consent URL.")
 
     CLIENT_CONFIG = json.loads(CLIENT_SECRETS_FILE)
-
+    logging.info(f"Base URL: {BASE_URL}, Redirect URI: {REDIRECT_URI}")
+    
+    redirect = BASE_URL + REDIRECT_URI
+    logging.info(f"Redirect URI: {redirect}")
     flow = Flow.from_client_config(
-        CLIENT_CONFIG, scopes=SCOPES, redirect_uri=BASE_URL + REDIRECT_URI
+        CLIENT_CONFIG, scopes=SCOPES, redirect_uri=redirect
     )
 
     auth_url, state = flow.authorization_url(access_type="offline", state=uid)
