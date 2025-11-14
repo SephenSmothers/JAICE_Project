@@ -20,9 +20,9 @@ router = APIRouter()
 
 celery_client = Celery("core_api_client")
 
-
 # LOCAL VS PROD ENV IMPORT VARIABLES (TRY PROD FALLBACK TO LOCAL)
 celery_client.conf.broker_url = os.getenv("CELERY_BROKER_URL_LOCAL") or os.getenv("CELERY_BROKER_URL_PROD")
+
 BASE_URL = os.getenv("VITE_API_BASE_URL_LOCAL") or os.getenv("VITE_API_BASE_URL_PROD")
 FRONTEND_DASHBOARD_URL = os.getenv("FRONTEND_DASHBOARD_URL_LOCAL") or os.getenv("FRONTEND_DASHBOARD_URL_PROD")
 CLIENT_SECRETS_FILE = os.getenv("CLIENT_SECRETS_LOCAL") or os.getenv("CLIENT_SECRETS_PROD")

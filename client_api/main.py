@@ -61,9 +61,12 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 # Allow the frontend to access the backend
+origins_raw = os.getenv("MIDDLEWARE_ORIGINS", "")
+allow_origins = [o.strip() for o in origins_raw.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("MIDDLEWARE_ORIGINS", "").split(","),
+    allow_origins=allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*", "Authorization", "Content-Type"],
