@@ -22,7 +22,9 @@ router = APIRouter()
 celery_client = Celery("core_api_client")
 
 # LOCAL VS PROD ENV IMPORT VARIABLES (TRY PROD FALLBACK TO LOCAL)
-celery_client.conf.broker_url = os.getenv("CELERY_BROKER_URL_LOCAL") or os.getenv("CELERY_BROKER_URL_PROD")
+celery_client.conf.update(
+    broker_url=str(os.getenv("CELERY_BROKER_URL_LOCAL") or os.getenv("CELERY_BROKER_URL_PROD"))
+)
 
 BASE_URL = os.getenv("VITE_API_BASE_URL_LOCAL") or os.getenv("VITE_API_BASE_URL_PROD")
 FRONTEND_DASHBOARD_URL = os.getenv("FRONTEND_DASHBOARD_URL_LOCAL") or os.getenv("FRONTEND_DASHBOARD_URL_PROD")
@@ -41,8 +43,15 @@ def get_oauth_consent_url(user: dict = Depends(get_user_from_token_query)):
     uid = user.get("uid")
     logging.info(f"Generating OAuth2 consent URL.")
 
+    if not CLIENT_SECRETS_FILE:
+        logging.error("FATAL: CLIENT_SECRETS environment variable is not set.")
+        raise ValueError("CLIENT_SECRETS environment variable is not set.")
     CLIENT_CONFIG = json.loads(CLIENT_SECRETS_FILE)
     logging.info(f"Base URL: {BASE_URL}, Redirect URI: {REDIRECT_URI}")
+    
+    if not BASE_URL or not REDIRECT_URI:
+        logging.error("FATAL: BASE_URL or REDIRECT_URI environment variable is not set.")
+        raise ValueError("BASE_URL or REDIRECT_URI environment variable is not set.")
     
     redirect = BASE_URL + REDIRECT_URI
     logging.info(f"Redirect URI: {redirect}")
@@ -84,10 +93,24 @@ async def oauth_callback(request: Request, code: str, state: str):
     logging.info(
         f"Using {days_to_sync}-day sync window for user {uid} (start date: {start_date.isoformat()})"
     )
+    if not CLIENT_SECRETS_FILE:
+        logging.error("FATAL: CLIENT_SECRETS environment variable is not set.")
+        raise ValueError("CLIENT_SECRETS environment variable is not set.")
+    
+    CLIENT_CONFIG = json.loads(CLIENT_SECRETS_FILE)
+    
+    if not BASE_URL or not REDIRECT_URI:
+        logging.error("FATAL: BASE_URL or REDIRECT_URI environment variable is not set.")
+        raise ValueError("BASE_URL or REDIRECT_URI environment variable is not set.")
+    
+    redirect = BASE_URL + REDIRECT_URI
 
-    flow = Flow.from_client_secrets_file(
-        CLIENT_SECRETS_FILE, scopes=SCOPES, redirect_uri=REDIRECT_URI
+    flow = Flow.from_client_config(
+        CLIENT_CONFIG,
+        scopes=SCOPES,
+        redirect_uri=redirect
     )
+
 
     try:
         flow.fetch_token(code=code)
@@ -150,7 +173,9 @@ async def oauth_callback(request: Request, code: str, state: str):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to enqueue initial Gmail sync task.",
         )
-
+    if not FRONTEND_DASHBOARD_URL:
+        logging.error("FATAL: FRONTEND_DASHBOARD_URL environment variable is not set.")
+        raise ValueError("FRONTEND_DASHBOARD_URL environment variable is not set.")
     return RedirectResponse(FRONTEND_DASHBOARD_URL)
 
 
