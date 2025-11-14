@@ -8,7 +8,7 @@ import { api } from "@/global-services/api";
 import userIcon from "@/assets/icons/user.svg";
 import { FloatingInputField } from "@/global-components/FloatingInputField";
 import { DaysToSync } from "./account-components/DaysToSync";
-const BASE_URL = import.meta.env.VITE_API_BASE_URL_LOCAL ?? import.meta.env.VITE_API_BASE_URL_PROD;
+const BASE_URL = import.meta.env.VITE_API_BASE_URL_PROD ?? import.meta.env.VITE_API_BASE_URL_LOCAL;;
 const GMAIL_CONSENT_URL = import.meta.env.VITE_GMAIL_CONSENT_URL ?? "/api/auth/consent";
 
 export function AccountPage() {
