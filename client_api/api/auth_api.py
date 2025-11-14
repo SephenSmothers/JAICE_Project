@@ -31,7 +31,7 @@ CLIENT_SECRETS_FILE = os.getenv("CLIENT_SECRETS_LOCAL", "CLIENT_SECRETS_PROD")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
 BACKGROUND_DURATION_DAYS = int(os.getenv("BACKGROUND_DURATION_DAYS", "365"))
 SCOPES = os.getenv("PERMISSIONS_SCOPES", "[]").strip("[]").replace('"', "").split(",")
-REDIRECT_URI = os.getenv("REDIRECT_URI")
+REDIRECT_URI = os.getenv("REDIRECT_URI", "")
 GOOGLE_REVOKE_ENDPOINT = os.getenv("GOOGLE_REVOKE_ENDPOINT", "https://oauth2.googleapis.com/revoke")
 
 
@@ -43,7 +43,7 @@ def get_oauth_consent_url(user: dict = Depends(get_user_from_token_query)):
     CLIENT_CONFIG = json.loads(CLIENT_SECRETS_FILE)
 
     flow = Flow.from_client_config(
-        CLIENT_CONFIG, scopes=SCOPES, redirect_uri=REDIRECT_URI
+        CLIENT_CONFIG, scopes=SCOPES, redirect_uri=BASE_URL + REDIRECT_URI
     )
 
     auth_url, state = flow.authorization_url(access_type="offline", state=uid)

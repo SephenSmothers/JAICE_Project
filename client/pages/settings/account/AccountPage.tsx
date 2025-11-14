@@ -9,6 +9,7 @@ import userIcon from "@/assets/icons/user.svg";
 import { FloatingInputField } from "@/global-components/FloatingInputField";
 import { DaysToSync } from "./account-components/DaysToSync";
 const BASE_URL = import.meta.env.VITE_API_BASE_URL_LOCAL ?? import.meta.env.VITE_API_BASE_URL_PROD;
+const GMAIL_CONSENT_URL = import.meta.env.VITE_GMAIL_CONSENT_URL ?? "/api/auth/consent";
 
 export function AccountPage() {
   const [busy, setBusy] = useState(false);
@@ -94,7 +95,7 @@ export function AccountPage() {
     });
     console.log("Setup RLS session response:", res);
     const token = await getIdToken();
-    window.location.href = `${BASE_URL}/api/auth/consent?token=${token}&days=${days}`;
+    window.location.href = `${BASE_URL}${GMAIL_CONSENT_URL}?token=${token}&days=${days}`;
     return res;
   }
 
