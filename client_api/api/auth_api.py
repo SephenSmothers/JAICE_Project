@@ -34,7 +34,7 @@ CLIENT_SECRETS_FILE = os.getenv("CLIENT_SECRETS_LOCAL") or os.getenv("CLIENT_SEC
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
 BACKGROUND_DURATION_DAYS = int(os.getenv("BACKGROUND_DURATION_DAYS", "365"))
 SCOPES = os.getenv("PERMISSIONS_SCOPES", "[]").strip("[]").replace('"', "").split(",")
-REDIRECT_URI = os.getenv("REDIRECT_URI", "")
+REDIRECT_URI = os.getenv("REDIRECT_URI", "/api/auth/google/callback")
 GOOGLE_REVOKE_ENDPOINT = os.getenv("GOOGLE_REVOKE_ENDPOINT", "https://oauth2.googleapis.com/revoke")
 
 
