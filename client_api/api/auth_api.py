@@ -25,9 +25,7 @@ JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
 BACKGROUND_DURATION_DAYS = int(os.getenv("BACKGROUND_DURATION_DAYS"))
 SCOPES = os.getenv("PERMISSIONS_SCOPES").strip("[]").replace('"', "").split(",")
 REDIRECT_URI = os.getenv("REDIRECT_URI")
-CLIENT_SECRETS_FILE = Path(__file__).resolve().parent.parent / os.getenv(
-    "CLIENT_FILE_NAME"
-)
+CLIENT_SECRETS_FILE = os.getenv("CLIENT_FILE_NAME")
 GOOGLE_REVOKE_ENDPOINT = "https://oauth2.googleapis.com/revoke"
 
 @router.get("/consent", summary="Generates the Google OAuth2 consent screen URL.")
