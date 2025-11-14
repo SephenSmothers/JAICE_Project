@@ -40,7 +40,7 @@ async def lifespan(app: FastAPI):
         raise
 
     try:
-        broker_url = os.getenv("CELERY_BROKER_URL_LOCAL", "CELERY_BROKER_URL_PROD")
+        broker_url = os.getenv("CELERY_BROKER_URL_LOCAL") or os.getenv("CELERY_BROKER_URL_PROD")
         app.state.redis = redis.from_url(broker_url, decode_responses=True)
         logging.info(f"Redis client connected at {broker_url}")
     except Exception as e:
