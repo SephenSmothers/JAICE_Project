@@ -4,8 +4,8 @@ import { getIdToken, getGoogleAccessToken, hasGmailAccess } from "./auth";
 
 
 // If Local (using docker, use the local url) else use prod url
-// const BASE_URL = import.meta.env.VITE_API_BASE_URL_PROD;
-const BASE_URL = import.meta.env.VITE_API_BASE_URL_LOCAL;
+const BASE_URL = import.meta.env.VITE_API_BASE_URL_PROD;
+// const BASE_URL = import.meta.env.VITE_API_BASE_URL_LOCAL;
 
 export async function api(path: string, init: RequestInit = {}) 
 {

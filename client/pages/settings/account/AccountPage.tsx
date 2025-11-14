@@ -10,8 +10,8 @@ import { FloatingInputField } from "@/global-components/FloatingInputField";
 import { DaysToSync } from "./account-components/DaysToSync";
 
 // If Local (using docker, use the local url) else use prod url
-// const BASE_URL = import.meta.env.VITE_API_BASE_URL_PROD;
-const BASE_URL = import.meta.env.VITE_API_BASE_URL_LOCAL;
+const BASE_URL = import.meta.env.VITE_API_BASE_URL_PROD;
+// const BASE_URL = import.meta.env.VITE_API_BASE_URL_LOCAL;
 
 const GMAIL_CONSENT_URL = import.meta.env.VITE_GMAIL_CONSENT_URL ?? "/api/auth/consent";
 
