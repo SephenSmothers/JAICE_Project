@@ -13,13 +13,15 @@ import { DaysToSync } from "./account-components/DaysToSync";
 // const BASE_URL = import.meta.env.VITE_API_BASE_URL_PROD;
 const BASE_URL = import.meta.env.VITE_API_BASE_URL_LOCAL;
 
-const GMAIL_CONSENT_URL = import.meta.env.VITE_GMAIL_CONSENT_URL ?? "/api/auth/consent";
+const GMAIL_CONSENT_URL =
+  import.meta.env.VITE_GMAIL_CONSENT_URL ?? "/api/auth/consent";
 
 export function AccountPage() {
   const [busy, setBusy] = useState(false);
   const [gmailError, setGmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [twoFAError, setTwoFAError] = useState<string | null>(null);
+  const [saveProfileError, setSaveProfileError] = useState<string | null>(null);
   const [deleteAccountError, setDeleteAccountError] = useState<string | null>(
     null
   );
@@ -230,6 +232,22 @@ export function AccountPage() {
                 action={() => console.log("Phone Number changed")}
                 isValid={true}
               />
+              <div className="flex w-full justify-between items-center gap-4">
+                <Button
+                  onClick={() => console.log("Save Profile clicked")}
+                  style={{ minWidth: "50%" }}
+                >
+                  Save Profile
+                </Button>
+                <small className="flex w-full text-sm text-red-400 text-left" role="alert">
+                  {saveProfileError}
+                </small>
+              </div>
+              <div className="flex w-full items-center justify-center my-2">
+                <small className="text-sm text-red-400" role="alert">
+                  {/* Profile save error messages go here */}
+                </small>
+              </div>
             </div>
           </section>
 
