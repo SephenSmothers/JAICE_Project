@@ -9,6 +9,12 @@ import userIcon from "@/assets/icons/user.svg";
 import { FloatingInputField } from "@/global-components/FloatingInputField";
 import { DaysToSync } from "./account-components/DaysToSync";
 
+// If Local (using docker, use the local url) else use prod url
+// const BASE_URL = import.meta.env.VITE_API_BASE_URL_PROD;
+const BASE_URL = import.meta.env.VITE_API_BASE_URL_LOCAL;
+
+const GMAIL_CONSENT_URL = import.meta.env.VITE_GMAIL_CONSENT_URL ?? "/api/auth/consent";
+
 export function AccountPage() {
   const [busy, setBusy] = useState(false);
   const [gmailError, setGmailError] = useState<string | null>(null);
@@ -93,7 +99,9 @@ export function AccountPage() {
     });
     console.log("Setup RLS session response:", res);
     const token = await getIdToken();
-    window.location.href = `http://localhost:8000/api/auth/consent?token=${token}&days=${days}`;
+    console.log(BASE_URL);
+    console.log(GMAIL_CONSENT_URL);
+    window.location.href = `${BASE_URL}${GMAIL_CONSENT_URL}?token=${token}&days=${days}`;
     return res;
   }
 
