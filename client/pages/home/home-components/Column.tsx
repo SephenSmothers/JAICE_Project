@@ -14,6 +14,9 @@ interface ColumnProps {
   reportHeight: (columnId: string, height: number) => void;
   sharedHeight: number;
   viewportHeight: number;
+
+  showToggleRejectButton?: boolean;
+  onToggleReject?: () => void;
 }
 
 export function Column({
@@ -27,6 +30,8 @@ export function Column({
   reportHeight,
   sharedHeight,
   viewportHeight,
+  showToggleRejectButton,
+  onToggleReject,
 }: ColumnProps) {
   const columnRef = useRef<HTMLDivElement>(null); // Ref to the column div
 
@@ -79,7 +84,19 @@ export function Column({
     >
       <div className="flex items-center justify-between p-4 select-none">
         <h3>+</h3>
-        <h3>{title}</h3>
+          <div className= "flex items-center gap-2">
+            <h3>{title}</h3>
+
+            {showToggleRejectButton && onToggleReject && (
+              <button
+                onClick={onToggleReject}
+                className="ml-2 px-2 py-1 text-xs rounded bg-red-500 text-white hover:bg-red-600 transition"
+              >
+                {title?.toLowerCase() === "rejected" ? "Show Accepted" : "Show Rejected"}
+              </button>
+            )}
+          </div>
+    
         <h3>{count}</h3>
       </div>
       <div className="flex border-b mx-4 mb-2" />

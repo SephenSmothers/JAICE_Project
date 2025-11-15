@@ -338,12 +338,29 @@ export function HomePage() {
     { id: "accepted", title: "Accepted", bg: "var(--color-blue-gray)" },
   ];
 
+   // track whether the Accepted column has been switched to Rejected
+  const [acceptedSwitchedToRejected, setAcceptedSwitchedToRejected] = useState(false);
+
+  const toggleAcceptedToRejected = useCallback(() => {
+    setAcceptedSwitchedToRejected((s) => !s);
+  }, []);
+
   const columnConfig = useMemo(() => {
     const hasStagingJobs = jobs.some(
       (job) => job.column?.toLowerCase() === "staging"
     );
 
-    const columns = [...baseColumnConfig];
+    const columns = baseColumnConfig.map((col) => {
+      if (col.id === "accepted" && acceptedSwitchedToRejected) {
+        return {
+          id: "rejected",
+          title: "Rejected",
+          bg: "var(--color-blue-gray)",
+        };
+      }
+      return col;
+    });
+
     if (hasStagingJobs) {
       columns.push({
         id: "staging",
@@ -352,7 +369,7 @@ export function HomePage() {
       });
     }
     return columns;
-  }, [jobs]);
+  }, [jobs, acceptedSwitchedToRejected]);
 
   const matchOrderMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -360,14 +377,24 @@ export function HomePage() {
     return map;
   }, [filteredJobs]);
 
+ 
+
   // Group jobs by their column for rendering
   // This creates a mapping of column ids to arrays of JobCard components
   // useMemo is used to memoize the result and only recalculate when jobs or columnConfig change
   const jobsByColumn = useMemo(() => {
     return columnConfig.reduce<Record<string, JSX.Element[]>>((acc, column) => {
-      const jobsInColumn = sortedJobs.filter(
-        (job) => job.column.toLowerCase() === column.id
-      );
+
+      const jobsInColumn = 
+      column.id === "rejected"
+        ? sortedJobs.filter(
+            (job) =>
+              (job.column?.toLowerCase?.() === "rejected") ||
+              job.applicationStage === "Rejected"
+          )
+        : sortedJobs.filter(
+            (job) => job.column?.toLowerCase?.() === column.id
+          );
 
       const orderedJobs = [...jobsInColumn].sort((a, b) => {
         const aMatched = matchOrderMap.has(a.id);
@@ -466,6 +493,9 @@ export function HomePage() {
                 sharedHeight={sharedHeight}
                 reportHeight={handleReportHeight}
                 viewportHeight={viewportHeight}
+
+                showToggleRejectButton={column.id === "accepted" || column.id === "rejected"}
+                onToggleReject={toggleAcceptedToRejected}
               >
                 {jobsByColumn[column.id]}{" "}
                 {/* render the JobCards associated with the columns id */}
