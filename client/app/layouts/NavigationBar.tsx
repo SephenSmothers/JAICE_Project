@@ -28,14 +28,14 @@ const NavButton = ({
   return (
     <div className="flex flex-row items-center gap-2">
       <Button onClick={onClick} isSelected={isSelected}>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center">
           <img src={icon} alt={label} className="w-5 h-5 flex-shrink-0" />
         </div>
       </Button>
       <motion.span
         className="text-white text-left overflow-hidden"
         style={{
-          height: "1.25rem", // ~text-lg height, adjust if needed
+          height: "1.25rem",
           display: "flex",
           alignItems: "center",
         }}
@@ -59,8 +59,16 @@ const primaryOptions = {
 
 const settingsOptions = {
   account: { route: "/settings/account", label: "Account", icon: accountIcon },
-  accessibility: { route: "/settings/accessibility", label: "Accessibility", icon: accessibilityIcon },
-  notification: { route: "/settings/notification", label: "Notification", icon: notificationIcon },
+  accessibility: {
+    route: "/settings/accessibility",
+    label: "Accessibility",
+    icon: accessibilityIcon,
+  },
+  notification: {
+    route: "/settings/notification",
+    label: "Notification",
+    icon: notificationIcon,
+  },
   quit: { route: "/", label: "Quit", icon: quitIcon },
 };
 
@@ -69,6 +77,8 @@ export function NavigationBar() {
   const location = useLocation();
 
   const [selectedButton, setSelectedButton] = useState<string>("");
+  const [navIsHovered, setNavIsHovered] = useState<boolean>(false);
+  const animationDuration = 0.2;
 
   useEffect(() => {
     // Update selected button based on current path
@@ -101,18 +111,19 @@ export function NavigationBar() {
   const headerEmail = user?.email?.toString() || null;
 
   return (
-    <div className="ml-[5rem] h-screen overflow-x-hidden">
+    <div className="h-screen overflow-x-hidden">
       <nav className="absolute left-0 h-screen">
         <motion.div
-          className="fixed z-200 group left-0 h-full bg-[var(--color-blue-1)] flex flex-col items-center p-2 gap-3 shadow-md overflow-hidden"
+          className="fixed z-200 left-0 h-full bg-[var(--color-blue-1)] flex flex-col items-left justify-center p-1 gap-3 shadow-md overflow-hidden"
           variants={{
             rest: { width: "5rem" },
             hover: { width: "15rem" },
           }}
           initial="rest"
-          animate="rest"
-          whileHover="hover"
-          transition={{ duration: 0.3 }}
+          animate={navIsHovered ? "hover" : "rest"} 
+          onMouseEnter={() => setNavIsHovered(true)}
+          onMouseLeave={() => setNavIsHovered(false)}
+          transition={{ duration: animationDuration }}
         >
           {/* Title */}
           <motion.header
@@ -134,7 +145,7 @@ export function NavigationBar() {
               initial="rest"
               animate="rest"
               whileHover="hover"
-              transition={{ duration: 0.3 }}
+              transition={{ duration: animationDuration }}
             />
 
             <motion.span
@@ -144,7 +155,7 @@ export function NavigationBar() {
                 rest: { opacity: 0 },
                 hover: { opacity: 1 },
               }}
-              transition={{ duration: 0.1 }}
+              transition={{ duration: animationDuration }}
             >
               Simplify Your Job Hunt
             </motion.span>
@@ -159,16 +170,16 @@ export function NavigationBar() {
                 className="flex flex-col items-start gap-2"
                 style={{ fontFamily: "var(--font-subheading)" }}
               >
-              {Object.entries(primaryOptions).map(([key, option]) => (
-                <li key={key}>
-                  <NavButton
-                    icon={option.icon}
-                    label={option.label}
-                    onClick={() => handleButtonClick(option.route, key)}
-                    isSelected={selectedButton === key}
-                  />
-                </li>
-              ))}
+                {Object.entries(primaryOptions).map(([key, option]) => (
+                  <li key={key}>
+                    <NavButton
+                      icon={option.icon}
+                      label={option.label}
+                      onClick={() => handleButtonClick(option.route, key)}
+                      isSelected={selectedButton === key}
+                    />
+                  </li>
+                ))}
               </ul>
             </section>
 
@@ -195,17 +206,26 @@ export function NavigationBar() {
       </nav>
 
       {/* Header */}
-      <header className="p-7 bg-[var(--color-blue-1)] shadow-md sticky top-0 z-100">
-        <div className="flex items-start justify-between">
+      <motion.header
+        className="px-8 py-4 bg-[var(--color-blue-1)] shadow-md sticky top-0 z-100"
+        variants={{
+          rest: { marginLeft: "5rem" },
+          hover: { marginLeft: "15rem" },
+        }}
+        initial="rest"
+        animate={navIsHovered ? "hover" : "rest"}
+        transition={{ duration: animationDuration }}
+      >
+        <div className="flex items-center justify-between">
           {/* account picture and name */}
-          <div className="flex items-center gap-3 ml-[10rem]">
+          <div className="flex items-center gap-4">
             {/* picture placeholder or first char of first name */}
-            <div className="w-30 h-30 rounded-full bg-gray-600">
+            <div className="w-20 h-20 rounded-full bg-gray-600">
               {profilePic ? (
                 <img
                   src={profilePic}
                   alt="Profile"
-                  className="w-full h-full object-cover rounded-full"
+                  className="w-full h-full object-cover rounded-full border-2 border-[var(--color-blue-3)]"
                 />
               ) : (
                 <div className="w-full h-full bg-gray-600 rounded-full flex items-center justify-center">
@@ -217,12 +237,12 @@ export function NavigationBar() {
             </div>
 
             {/* name placeholder */}
-            <div className="flex flex-col text-white ">
-              <h2 className="text-2xl text-left">
+            <div className="flex flex-col text-white">
+              <h2 className="text-2xl text-left font-bold">
                 {firstName} {lastName}
               </h2>
-              <h3 className="text-lg text-gray-300 text-left">{headerEmail}</h3>
-              <h3 className="text-lg text-gray-300 text-left">Fresh Starter</h3>
+              <small className="text-gray-300 text-left monospace ">{headerEmail}</small>
+              <caption className="text-gray-300 text-left monospace">Fresh Starter</caption>
             </div>
           </div>
 
@@ -249,10 +269,18 @@ export function NavigationBar() {
             </div>
           </div>
         </div>
-      </header>
-      <div className="overflow-x-auto">
+      </motion.header>
+      <motion.div
+        className="overflow-x-auto"
+        variants={{
+          rest: { marginLeft: "5rem" },
+          hover: { marginLeft: "15rem" },
+        }}
+        animate={navIsHovered ? "hover" : "rest"}
+        transition={{ duration: animationDuration }}
+      >
         <Outlet />
-      </div>
+      </motion.div>
     </div>
   );
 }
