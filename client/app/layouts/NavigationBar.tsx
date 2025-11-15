@@ -2,7 +2,7 @@
 import Button from "@/global-components/button";
 import { Outlet, useLocation, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
-import {auth} from "@/global-services/firebase"
+import { auth } from "@/global-services/firebase";
 
 // Icons
 import homeIcon from "@/assets/icons/home.svg";
@@ -44,24 +44,13 @@ export function NavigationBar() {
     navigate(route);
   };
 
-  function usernameFromEmail(email?: string | null) {
-  if (!email) return "";
-  const local = email.split("@")[0];       // before @
-  const noTag = local.split("+")[0];       // drop +anything
-  // turn dots/underscores into spaces and Title Case it
-  return noTag
-    .replace(/[._-]+/g, " ")
-    .trim()
-    .replace(/\b\w/g, c => c.toUpperCase());
-}
-
-const HeaderUserName = usernameFromEmail(auth.currentUser?.email);
-const HeaderEmail = auth.currentUser?.email?.toString();
-
-
+  const profilePic = auth.currentUser?.photoURL;
+  const firstName = auth.currentUser?.displayName?.split(" ")[0] || null;
+  const lastName = auth.currentUser?.displayName?.split(" ").slice(1).join(" ") || null;
+  const headerEmail = auth.currentUser?.email?.toString() || null;
 
   return (
-    <div className="ml-[5rem] h-screen overflow-x-hidden"> 
+    <div className="ml-[5rem] h-screen overflow-x-hidden">
       <nav className="absolute left-0 h-screen">
         <div className="fixed z-200 group left-0 w-[5rem] hover:w-[15rem] h-full bg-[var(--color-blue-1)] flex flex-col items-center p-2 gap-2 shadow-md">
           {/* Title */}
@@ -70,14 +59,16 @@ const HeaderEmail = auth.currentUser?.email?.toString();
               className="text-xl font-bold"
               style={{ fontFamily: "var(--font-title)" }}
             >
-                <div className="flex flex-col items-center gap-2">
-                      <img
-                        src="/JAICE_logo.png"
-                        alt="JAICE"
-                        className="w-17 h-17 group-hover:w-30 group-hover:h-30 flex-shrink-0 transition-all duration-200"
-                      />
-                      <span className="hidden group-hover:inline text-2xl">Simplify Your Job Hunt</span>
-                    </div>
+              <div className="flex flex-col items-center gap-2">
+                <img
+                  src="/JAICE_logo.png"
+                  alt="JAICE"
+                  className="w-17 h-17 group-hover:w-30 group-hover:h-30 flex-shrink-0 transition-all duration-200"
+                />
+                <span className="hidden group-hover:inline text-2xl">
+                  Simplify Your Job Hunt
+                </span>
+              </div>
             </h1>
           </header>
 
@@ -252,23 +243,34 @@ const HeaderEmail = auth.currentUser?.email?.toString();
           </div>
         </div>
       </nav>
-      
+
       {/* Header */}
       <header className="p-7 bg-[var(--color-blue-1)] shadow-md sticky top-0 z-100">
         <div className="flex items-start justify-between">
-
           {/* account picture and name */}
           <div className="flex items-center gap-3 ml-[10rem]">
+            {/* picture placeholder or first char of first name */}
+            <div className="w-30 h-30 rounded-full bg-gray-600">
+              {profilePic ? (
+                <img
+                  src={profilePic}
+                  alt="Profile"
+                  className="w-full h-full object-cover rounded-full"
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-600 rounded-full flex items-center justify-center">
+                  <span className="text-white text-xl font-bold">
+                    {firstName?.charAt(0)}
+                  </span>
+                </div>
+              )}
+            </div>
 
-            {/* picture placeholder */}
-            <div  className="w-30 h-30 rounded-full bg-gray-600"></div>
-
-              {/* name placeholder */}
+            {/* name placeholder */}
             <div className="flex flex-col text-white ">
-              <h2 className="text-2xl text-left">{HeaderUserName}</h2>
-              <h3 className="text-lg text-gray-300 text-left">{HeaderEmail}</h3>
+              <h2 className="text-2xl text-left">{firstName} {lastName}</h2>
+              <h3 className="text-lg text-gray-300 text-left">{headerEmail}</h3>
               <h3 className="text-lg text-gray-300 text-left">Fresh Starter</h3>
-
             </div>
           </div>
 
@@ -286,14 +288,15 @@ const HeaderEmail = auth.currentUser?.email?.toString();
                 src={searchIcon}
                 alt="Search"
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
-
                 // changes the color of  the icon
-                style={{ filter: 'brightness(0) saturate(100%) invert(60%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(70%) contrast(90%)' }}   
+                style={{
+                  filter:
+                    "brightness(0) saturate(100%) invert(60%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(70%) contrast(90%)",
+                }}
               />
             </div>
           </div>
         </div>
-
       </header>
       <div className="overflow-x-auto">
         <Outlet />
