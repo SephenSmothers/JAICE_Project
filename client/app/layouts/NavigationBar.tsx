@@ -2,8 +2,7 @@
 import Button from "@/global-components/button";
 import { Outlet, useLocation, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
-import { auth } from "@/global-services/firebase";
-
+import { useAuth } from "@/global-components/AuthProvider";
 // Icons
 import homeIcon from "@/assets/icons/home.svg";
 import aboutIcon from "@/assets/icons/book-open-cover.svg";
@@ -44,10 +43,11 @@ export function NavigationBar() {
     navigate(route);
   };
 
-  const profilePic = auth.currentUser?.photoURL;
-  const firstName = auth.currentUser?.displayName?.split(" ")[0] || null;
-  const lastName = auth.currentUser?.displayName?.split(" ").slice(1).join(" ") || null;
-  const headerEmail = auth.currentUser?.email?.toString() || null;
+  const { user } = useAuth();
+  const profilePic = user?.photoURL;
+  const firstName = user?.displayName?.split(" ")[0] || null;
+  const lastName = user?.displayName?.split(" ").slice(1).join(" ") || null;
+  const headerEmail = user?.email?.toString() || null;
 
   return (
     <div className="ml-[5rem] h-screen overflow-x-hidden">
