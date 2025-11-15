@@ -51,6 +51,7 @@ export function AccountPage() {
       setGmailError("Error checking gmail status.");
     }
   }
+
   async function handleShowModal() {
     if (gmailConnected) {
       await handleGmailLinking();
@@ -159,7 +160,10 @@ export function AccountPage() {
 
     setDeleteAccountError(`Failed to delete account: ${res.code}`);
   }
-
+  const firstName = auth.currentUser?.displayName?.split(" ")[0] || "User";
+  const lastName = auth.currentUser?.displayName?.split(" ").slice(1).join(" ") || "";
+  const phoneNumber = auth.currentUser?.phoneNumber || "";
+  const profilePicURL = auth.currentUser?.photoURL || "";
   // This was refactored for better readability on the page. It still needs updated to present on mobile devices.
   return (
     <div
@@ -186,7 +190,7 @@ export function AccountPage() {
             <div className="flex flex-col items-center justify-evenly mt-6 mb-2">
               <div className="w-24 h-24 rounded-full bg-white mb-4 aspect-square">
                 <img
-                  src={userIcon}
+                  src={profilePicURL || userIcon}
                   alt="Profile Picture"
                   className="w-full h-full rounded-full object-cover p-0.5"
                 />
@@ -214,21 +218,21 @@ export function AccountPage() {
               <FloatingInputField
                 label="First Name"
                 type="text"
-                value=""
+                value={firstName}
                 action={() => console.log("First Name changed")}
                 isValid={true}
               />
               <FloatingInputField
                 label="Last Name"
                 type="text"
-                value=""
+                value={lastName}
                 action={() => console.log("Last Name changed")}
                 isValid={true}
               />
               <FloatingInputField
                 label="Phone Number"
                 type="text"
-                value=""
+                value={phoneNumber}
                 action={() => console.log("Phone Number changed")}
                 isValid={true}
               />
