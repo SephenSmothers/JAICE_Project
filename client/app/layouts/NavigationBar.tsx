@@ -161,7 +161,7 @@ export function NavigationBar() {
             </motion.span>
           </motion.header>
 
-          <hr className="w-full border-t-2 border-gray-400 my-2" />
+          <hr className="w-full border-t-2 border-gray-400" />
 
           <div className="flex flex-col items-left  h-full w-full justify-between group-hover:items-start">
             {/* Primary Page Buttons*/}
