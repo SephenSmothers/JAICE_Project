@@ -357,11 +357,6 @@ async def revoke_gmail_consent(
 async def setup_user_db(request: Request, user: dict = Depends(get_current_user)):
     uid = user.get("uid", "")
     email = user.get("email", "")
-    name = user.get("name", "")
-    split_name = name.split(" ")
-    f_name = split_name[0] if len(split_name) > 0 else ""
-    l_name = split_name[1] if len(split_name) > 1 else ""
-    profile_pic = user.get("picture", "")
     
     pool = request.app.state.pool
     logging.info(f"Checking database record for user: {uid}")
@@ -384,16 +379,12 @@ async def setup_user_db(request: Request, user: dict = Depends(get_current_user)
         async with pool.acquire() as conn:
             await conn.execute(
                 """
-                INSERT INTO user_account (user_id, user_email, backend_rls_jwt, full_name, first_name, last_name, profile_pic_url)
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                INSERT INTO user_account (user_id, user_email, backend_rls_jwt)
+                VALUES ($1, $2, $3)
                 """,
                 uid,
                 email,
                 jwt_token,
-                name,
-                f_name,
-                l_name,
-                profile_pic,
             )
             logging.info(f"Created new record for user {uid}")
             return {"status": "created", "user_id": uid}
