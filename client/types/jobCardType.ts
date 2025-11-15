@@ -8,4 +8,7 @@ export type JobCardType = {
   receivedAtRaw?: string | null;
   isArchived?: boolean;
   isDeleted?: boolean;
+
+  reviewNeeded?: boolean;
+  applicationStage?: string;
 };

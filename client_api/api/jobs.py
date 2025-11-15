@@ -9,6 +9,48 @@ from client_api.deps.auth import get_current_user
 logging = get_logger()
 router = APIRouter()
 
+@router.post("/set-review-needed")
+
+async def set_review_needed(payload:dict = Body(...), user: dict = Depends(get_current_user)):
+    """
+    Payload:
+        {
+            "provider_message_ids": ["msgId1", "msgId2"],
+            "needs_review": false
+        }
+    """
+    trace_id = str(uuid.uuid4())
+    uid = user.get("uid")
+    message_ids = payload.get("provider_message_ids")
+    needs_review = payload.get("needs_review")
+
+    if message_ids is None or needs_review is None:
+        raise HTTPException(status_code=400, detail="Missing required data")
+    
+    query = """
+        UPDATE public.job_applications
+        SET needs_review = $1
+        WHERE provider_message_id = ANY($2)
+        AND user_uid = $3
+        RETURNING provider_message_id, needs_review, updated_at
+    """
+
+    try:
+        async with get_connection() as conn:
+            results = await conn.fetch(query, needs_review, message_ids, uid)
+
+        count = len(results)
+        logging.info(f"[{trace_id}] Updated needs_review to {needs_review} for {count} job(s) for user {uid}.")
+        return {
+            "status": "success",
+            "count": count,
+            "updated": [dict(r) for r in results],
+        }
+
+    except Exception as e:
+        logging.error(f"[{trace_id}] Error updating review state: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.get(
     "/latest-jobs", summary="Get all the users latest job applications from supabase."

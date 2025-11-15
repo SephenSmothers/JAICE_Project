@@ -1,12 +1,13 @@
 // import { localfiles } from "@/directory/path/to/localimport";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import downChevron from "@/assets/icons/angle-small-down.svg";
 import uncheckIcon from "@/assets/icons/uncheck-icon.svg";
 import checkIcon from "@/assets/icons/check-icon.svg";
 import type { JobCardType } from "@/types/jobCardType";
 import { auth } from "@/global-services/firebase";
+import { api } from "@/global-services/api";
 
 export function JobCard({
   job,
@@ -25,6 +26,7 @@ export function JobCard({
 }) {
   const [isSelected, setIsSelected] = useState(false); // Placeholder for selection state
   const [isOpen, setIsOpen] = useState(false); // State to manage expanded/collapsed view
+  const [localReviewNeeded, setLocalReviewNeeded] = useState<boolean>(!!job.reviewNeeded);
 
   // If multi-select mode is turned off, clear selection state
   if (!isMultiSelecting && isSelected) {
@@ -50,6 +52,8 @@ export function JobCard({
     ...(isOpen ? { transform: "rotate(180deg)" } : {}),
   };
 
+  const [isHovered, setIsHovered] = useState(false);
+
   // open email in new window
   const openMessage = (messageId: string): void => {
     // get the current user's email from Firebase Authentication
@@ -67,6 +71,31 @@ export function JobCard({
     window.open(url, "_blank");
   };
 
+  const cardBorderColor = useMemo (() => {
+    // if email is marked as accepted make the card border green
+     if (job.applicationStage === "Accepted") 
+    {
+      return "border-green-500";
+    } 
+    // if email is marked as rejected make the card border red
+    else if (job.applicationStage === "Rejected") 
+    {
+      return "border-red-500";
+    } 
+    else 
+    {
+      return "border-transparent";
+    }
+
+  }, [job.applicationStage]);
+
+  const reviewBorderColor = useMemo (() => {
+    // if email is marked as review needed make the card border orange
+    return localReviewNeeded 
+    ? {boxShadow: "0 0 0 2px rgba(249,115,22,1)"} : undefined;
+    
+  }, [localReviewNeeded]);
+
   const variants = {
     active: { opacity: 1, scale: 1, filter: "none" },
     dimmed: {
@@ -76,10 +105,37 @@ export function JobCard({
     },
   };
 
+  const hoverMessageForReview = localReviewNeeded
+    ? "This job requires your review. Mark it as reviewed when done." 
+    : "";
+
+  const markAsReviewed = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+
+    setLocalReviewNeeded(false);
+    setIsOpen(true); // keep the card open to show the change
+
+    // mark job as reviewed
+    try {
+      await api("/api/jobs/set-review-needed", {
+        method: "POST",
+        body: JSON.stringify({
+          provider_message_ids: [job.id],
+          needs_review: false,
+      }),
+      });
+    } catch (error) {
+      console.error("Failed to mark job as reviewed:", error);
+      setLocalReviewNeeded(true); // keep the review needed state if API call fails
+    }
+  };
+
   return (
     <motion.div
       id={job.id}
-      className={`border w-full p-4 rounded shadow-sm bg-[#1D1B20] flex items-center flex flex-col`}
+      title={isHovered && hoverMessageForReview ? hoverMessageForReview : ""}
+      className={`relative border w-full p-4 rounded shadow-sm bg-[#1D1B20] flex items-center flex flex-col ${cardBorderColor}`}
+      style={reviewBorderColor}
       drag
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
@@ -90,6 +146,11 @@ export function JobCard({
         boxShadow: "0px 3px 10px rgba(0,0,0,0.2)",
         cursor: "pointer",
       }}
+
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      
+
       // onTap cycles between expanding the card and selecting it based on isMultiSelecting
       onTap={() => {
         handleMultiSelectClick(job);
@@ -111,8 +172,26 @@ export function JobCard({
       dragSnapToOrigin
       layout
     >
-      {/* Main Card Container Above (wraps all content) */}
+    {/* Tooltip for Review Needed */}
+    <AnimatePresence>
+      {localReviewNeeded && isHovered && (
+        <motion.div
+          key="review-tooltip"
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.12 }}
+          role="tooltip"
+          aria-hidden={!isHovered}
+          className="absolute right-3 top-3 z-50 bg-orange-600 text-white text-xs rounded px-2 py-1"
+        >
+          {hoverMessageForReview}
+        </motion.div>
+      )}
+    </AnimatePresence>
 
+      {/* Main Card Container Above (wraps all content) */}
+      
       <div className="flex justify-between w-full items-center text-left">
         <motion.div className="flex items-center gap-2 " layout>
           {/* This Motion Div (above) is to wrap the title and the checkbox so we get smooth animation without affecting the open/close chevron*/}
@@ -165,6 +244,7 @@ export function JobCard({
         <div className="flex flex-col text-left w-full gap-1 pb-2">
           <small>Small Startup</small>
           <small>Recruiter</small>
+          
           <a
             href="#"
             onClick={(e) => {
@@ -185,6 +265,13 @@ export function JobCard({
           >
             View Email
           </a>
+          <button
+            type="button"
+            className={localReviewNeeded ? "reviewed" : "hidden"}
+            onClick={markAsReviewed}
+          >
+            Mark as Reviewed
+          </button>
         </div>
       </motion.div>
     </motion.div>

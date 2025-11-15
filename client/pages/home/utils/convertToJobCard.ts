@@ -21,6 +21,9 @@ export function convertToJobCard(rawJob: any): JobCardType {
     receivedAtRaw: rawDate ? String(rawDate) : null,
     isArchived: rawJob.is_archived || false,
     isDeleted: rawJob.is_deleted || false,
+
+    reviewNeeded: !!(rawJob.needs_review ?? rawJob.review_needed ?? rawJob.needsReview ?? false),
+    applicationStage: rawJob.application_stage ?? rawJob.app_stage ?? rawJob.applicationStage ?? undefined,
   };
 }
 
@@ -40,5 +43,7 @@ export function convertBroadcastToJobCard(event: any): JobCardType | null {
     receivedAtRaw: rawDate ? String(rawDate) : null,
     isArchived: eventRecord.is_archived || false,
     isDeleted: eventRecord.is_deleted || false,
+    reviewNeeded: !!(eventRecord.needs_review ?? eventRecord.review_needed ?? eventRecord.needsReview ?? false),
+    applicationStage: eventRecord.application_stage ?? eventRecord.app_stage ?? eventRecord.applicationStage ?? undefined,
   };
 }
