@@ -12,6 +12,57 @@ import accessibilityIcon from "@/assets/icons/hand-paper.svg";
 import notificationIcon from "@/assets/icons/bell-notification-social-media.svg";
 import quitIcon from "@/assets/icons/user-logout.svg";
 import searchIcon from "@/assets/icons/search.svg";
+import { motion } from "framer-motion";
+
+const NavButton = ({
+  icon,
+  label,
+  onClick,
+  isSelected,
+}: {
+  icon: string;
+  label: string;
+  onClick: () => void;
+  isSelected: boolean;
+}) => {
+  return (
+    <div className="flex flex-row items-center gap-2">
+      <Button onClick={onClick} isSelected={isSelected}>
+        <div className="flex items-center gap-2">
+          <img src={icon} alt={label} className="w-5 h-5 flex-shrink-0" />
+        </div>
+      </Button>
+      <motion.span
+        className="text-white text-left overflow-hidden"
+        style={{
+          height: "1.25rem", // ~text-lg height, adjust if needed
+          display: "flex",
+          alignItems: "center",
+        }}
+        variants={{
+          rest: { opacity: 0 },
+          hover: { opacity: 1 },
+        }}
+        transition={{ duration: 0.15 }}
+      >
+        {label}
+      </motion.span>
+    </div>
+  );
+};
+
+const primaryOptions = {
+  home: { route: "/home", label: "Home", icon: homeIcon },
+  about: { route: "/auth-about", label: "About", icon: aboutIcon },
+  dashboard: { route: "/dashboard", label: "Dashboard", icon: dashboardIcon },
+};
+
+const settingsOptions = {
+  account: { route: "/settings/account", label: "Account", icon: accountIcon },
+  accessibility: { route: "/settings/accessibility", label: "Accessibility", icon: accessibilityIcon },
+  notification: { route: "/settings/notification", label: "Notification", icon: notificationIcon },
+  quit: { route: "/", label: "Quit", icon: quitIcon },
+};
 
 export function NavigationBar() {
   const navigate = useNavigate();
@@ -52,196 +103,95 @@ export function NavigationBar() {
   return (
     <div className="ml-[5rem] h-screen overflow-x-hidden">
       <nav className="absolute left-0 h-screen">
-        <div className="fixed z-200 group left-0 w-[5rem] hover:w-[15rem] h-full bg-[var(--color-blue-1)] flex flex-col items-center p-2 gap-2 shadow-md">
+        <motion.div
+          className="fixed z-200 group left-0 h-full bg-[var(--color-blue-1)] flex flex-col items-center p-2 gap-3 shadow-md overflow-hidden"
+          variants={{
+            rest: { width: "5rem" },
+            hover: { width: "15rem" },
+          }}
+          initial="rest"
+          animate="rest"
+          whileHover="hover"
+          transition={{ duration: 0.3 }}
+        >
           {/* Title */}
-          <header>
-            <h1
-              className="text-xl font-bold"
+          <motion.header
+            className="flex flex-col items-center gap-2"
+            variants={{
+              rest: {},
+              hover: {},
+            }}
+          >
+            <motion.img
+              src="/JAICE_logo.png"
+              alt="JAICE"
+              className="h-17 flex-shrink-0 transition-all"
+              style={{ objectFit: "contain" }}
+              variants={{
+                rest: { width: "5rem" },
+                hover: { width: "15rem" },
+              }}
+              initial="rest"
+              animate="rest"
+              whileHover="hover"
+              transition={{ duration: 0.3 }}
+            />
+
+            <motion.span
+              className="text-2xl line-clamp-1 text-white text-left"
               style={{ fontFamily: "var(--font-title)" }}
+              variants={{
+                rest: { opacity: 0 },
+                hover: { opacity: 1 },
+              }}
+              transition={{ duration: 0.1 }}
             >
-              <div className="flex flex-col items-center gap-2">
-                <img
-                  src="/JAICE_logo.png"
-                  alt="JAICE"
-                  className="w-17 h-17 group-hover:w-30 group-hover:h-30 flex-shrink-0 transition-all duration-200"
-                />
-                <span className="hidden group-hover:inline text-2xl">
-                  Simplify Your Job Hunt
-                </span>
-              </div>
-            </h1>
-          </header>
+              Simplify Your Job Hunt
+            </motion.span>
+          </motion.header>
 
           <hr className="w-full border-t-2 border-gray-400 my-2" />
 
-          <div className="flex flex-col items-center h-full w-full justify-between group-hover:items-start">
-            {/* Navigation Buttons */}
+          <div className="flex flex-col items-left  h-full w-full justify-between group-hover:items-start">
+            {/* Primary Page Buttons*/}
             <section aria-label="Navigation Buttons">
               <ul
                 className="flex flex-col items-start gap-2"
                 style={{ fontFamily: "var(--font-subheading)" }}
               >
-                <li>
-                  <Button
-                    onClick={() => handleButtonClick("/home", "home")}
-                    isSelected={selectedButton === "home"}
-                  >
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={homeIcon}
-                        alt="Home"
-                        className="w-5 h-5 flex-shrink-0"
-                      />{" "}
-                      {/* when not hovered (flex-shrink-0 makes the icon not shrink when not hovered) */}
-                      <span className="hidden group-hover:inline">Home</span>{" "}
-                      {/* when hovered */}
-                    </div>
-                  </Button>
+              {Object.entries(primaryOptions).map(([key, option]) => (
+                <li key={key}>
+                  <NavButton
+                    icon={option.icon}
+                    label={option.label}
+                    onClick={() => handleButtonClick(option.route, key)}
+                    isSelected={selectedButton === key}
+                  />
                 </li>
-
-                <li>
-                  <Button
-                    onClick={() => handleButtonClick("/auth-about", "about")}
-                    isSelected={selectedButton === "about"}
-                  >
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={aboutIcon}
-                        alt="About"
-                        className="w-5 h-5 flex-shrink-0"
-                      />{" "}
-                      {/* when not hovered */}
-                      <span className="hidden group-hover:inline">
-                        About
-                      </span>{" "}
-                      {/* when hovered */}
-                    </div>
-                  </Button>
-                </li>
-
-                <li>
-                  <Button
-                    onClick={() => handleButtonClick("/dashboard", "dashboard")}
-                    isSelected={selectedButton === "dashboard"}
-                  >
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={dashboardIcon}
-                        alt="Dashboard"
-                        className="w-5 h-5 flex-shrink-0"
-                      />{" "}
-                      {/* when not hovered */}
-                      <span className="hidden group-hover:inline">
-                        Dashboard
-                      </span>{" "}
-                      {/* when hovered */}
-                    </div>
-                  </Button>
-                </li>
+              ))}
               </ul>
             </section>
 
-            {/* Settings and Account Buttons */}
+            {/* Settings Buttons */}
             <section aria-label="Settings and account">
               <ul
                 className="flex flex-col items-start gap-2"
                 style={{ fontFamily: "var(--font-subheading)" }}
               >
-                <li>
-                  <Button
-                    onClick={() =>
-                      handleButtonClick("/settings/account", "account")
-                    }
-                    isSelected={selectedButton === "account"}
-                  >
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={accountIcon}
-                        alt="Account"
-                        className="w-5 h-5 flex-shrink-0"
-                      />{" "}
-                      {/* when not hovered  */}
-                      <span className="hidden group-hover:inline">
-                        Account
-                      </span>{" "}
-                      {/* when hovered */}
-                    </div>
-                  </Button>
-                </li>
-
-                <li>
-                  <Button
-                    onClick={() =>
-                      handleButtonClick(
-                        "/settings/accessibility",
-                        "accessibility"
-                      )
-                    }
-                    isSelected={selectedButton === "accessibility"}
-                  >
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={accessibilityIcon}
-                        alt="Accessibility"
-                        className="w-5 h-5 flex-shrink-0"
-                      />{" "}
-                      {/* when not hovered */}
-                      <span className="hidden group-hover:inline">
-                        Accessibility
-                      </span>{" "}
-                      {/* when hovered */}
-                    </div>
-                  </Button>
-                </li>
-
-                <li>
-                  <Button
-                    onClick={() =>
-                      handleButtonClick(
-                        "/settings/notification",
-                        "notification"
-                      )
-                    }
-                    isSelected={selectedButton === "notification"}
-                  >
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={notificationIcon}
-                        alt="Notification"
-                        className="w-5 h-5 flex-shrink-0"
-                      />{" "}
-                      {/* when not hovered */}
-                      <span className="hidden group-hover:inline">
-                        Notification
-                      </span>{" "}
-                      {/* when hovered */}
-                    </div>
-                  </Button>
-                </li>
-
-                <li>
-                  <Button
-                    onClick={() => handleButtonClick("/", "quit")}
-                    isSelected={selectedButton === "quit"}
-                  >
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={quitIcon}
-                        alt="Quit"
-                        className="w-5 h-5 flex-shrink-0"
-                      />{" "}
-                      {/* when not hovered */}
-                      <span className="hidden group-hover:inline">
-                        Quit
-                      </span>{" "}
-                      {/* when hovered */}
-                    </div>
-                  </Button>
-                </li>
+                {Object.entries(settingsOptions).map(([key, option]) => (
+                  <li key={key}>
+                    <NavButton
+                      icon={option.icon}
+                      label={option.label}
+                      onClick={() => handleButtonClick(option.route, key)}
+                      isSelected={selectedButton === key}
+                    />
+                  </li>
+                ))}
               </ul>
             </section>
           </div>
-        </div>
+        </motion.div>
       </nav>
 
       {/* Header */}
@@ -268,7 +218,9 @@ export function NavigationBar() {
 
             {/* name placeholder */}
             <div className="flex flex-col text-white ">
-              <h2 className="text-2xl text-left">{firstName} {lastName}</h2>
+              <h2 className="text-2xl text-left">
+                {firstName} {lastName}
+              </h2>
               <h3 className="text-lg text-gray-300 text-left">{headerEmail}</h3>
               <h3 className="text-lg text-gray-300 text-left">Fresh Starter</h3>
             </div>
