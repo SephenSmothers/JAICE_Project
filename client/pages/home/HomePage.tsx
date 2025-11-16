@@ -328,38 +328,59 @@ export function HomePage() {
       return { ...prev, [columnId]: height };
     });
   }, []);
+  
+  // track whether the Accepted column has been switched to Rejected
+  const [acceptedSwitchedToRejected, setAcceptedSwitchedToRejected] = useState(true);
 
   // Column configuration for the Kanban board
   // Each column has an id, title, and background color
-  const baseColumnConfig = [
+  const [baseConfig, setBaseConfig] = useState([
     { id: "applied", title: "Applied", bg: "var(--color-light-purple)" },
     { id: "interview", title: "Interview", bg: "var(--color-teal)" },
     { id: "offer", title: "Offer", bg: "var(--color-dark-purple)" },
     { id: "accepted", title: "Accepted", bg: "var(--color-blue-gray)" },
-  ];
+  ]);
 
-   // track whether the Accepted column has been switched to Rejected
-  const [acceptedSwitchedToRejected, setAcceptedSwitchedToRejected] = useState(false);
-
-  const toggleAcceptedToRejected = useCallback(() => {
-    setAcceptedSwitchedToRejected((s) => !s);
+  const switchAcceptedToRejected = useCallback(() => {
+    setBaseConfig((prevConfig) => {
+       if (prevConfig[3].id === "accepted") 
+      {
+        return [
+        { id: "applied", title: "Applied", bg: "var(--color-light-purple)" },
+        { id: "interview", title: "Interview", bg: "var(--color-teal)" },
+        { id: "offer", title: "Offer", bg: "var(--color-dark-purple)" },
+        { id: "rejected", title: "Rejected", bg: "var(--color-blue-gray)" },
+      ];
+      }
+      else 
+      {
+      // Column configuration for the Kanban board
+      // Each column has an id, title, and background color
+        return [
+          { id: "applied", title: "Applied", bg: "var(--color-light-purple)" },
+          { id: "interview", title: "Interview", bg: "var(--color-teal)" },
+          { id: "offer", title: "Offer", bg: "var(--color-dark-purple)" },
+          { id: "accepted", title: "Accepted", bg: "var(--color-blue-gray)" },
+        ];
+      }
+    });
   }, []);
+
+
+  useEffect(() => {
+    switchAcceptedToRejected();
+  }, [acceptedSwitchedToRejected]);
+  
+  const toggleAcceptedToRejected = () => {
+    setAcceptedSwitchedToRejected((prev) => !prev);
+  };
 
   const columnConfig = useMemo(() => {
     const hasStagingJobs = jobs.some(
       (job) => job.column?.toLowerCase() === "staging"
     );
 
-    const columns = baseColumnConfig.map((col) => {
-      if (col.id === "accepted" && acceptedSwitchedToRejected) {
-        return {
-          id: "rejected",
-          title: "Rejected",
-          bg: "var(--color-blue-gray)",
-        };
-      }
-      return col;
-    });
+    const columns = [...baseConfig];
 
     if (hasStagingJobs) {
       columns.push({
@@ -369,7 +390,7 @@ export function HomePage() {
       });
     }
     return columns;
-  }, [jobs, acceptedSwitchedToRejected]);
+  }, [jobs, baseConfig]);
 
   const matchOrderMap = useMemo(() => {
     const map = new Map<string, number>();

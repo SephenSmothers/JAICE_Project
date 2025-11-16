@@ -2,6 +2,7 @@
 
 import React, { useRef, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
+import RejectedIcon from '../../../assets/icons/refresh.svg';
 
 interface ColumnProps {
   id: string;
@@ -90,9 +91,11 @@ export function Column({
             {showToggleRejectButton && onToggleReject && (
               <button
                 onClick={onToggleReject}
-                className="ml-2 px-2 py-1 text-xs rounded bg-red-500 text-white hover:bg-red-600 transition"
+                className="group"
               >
-                {title?.toLowerCase() === "rejected" ? "Show Accepted" : "Show Rejected"}
+                <img src={RejectedIcon}   
+                  alt="Switch toAccepted/Rejected"
+                  className="w-5 h-5 transition-transform duration-300 ease-in-out group-hover:rotate-180" />
               </button>
             )}
           </div>
