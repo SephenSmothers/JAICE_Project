@@ -9,7 +9,7 @@ import { FloatingInputField } from "@/global-components/FloatingInputField";
 import { DaysToSync } from "./account-components/DaysToSync";
 import { useAuth } from "@/global-components/AuthProvider";
 import { useLocation, useNavigate } from "react-router-dom";
-
+import { ChangePhotoModal } from "./account-components/ChangePhotoModal";
 // If Local (using docker, use the local url) else use prod url
 // const BASE_URL = import.meta.env.VITE_API_BASE_URL_PROD;
 const BASE_URL = import.meta.env.VITE_API_BASE_URL_LOCAL;
@@ -29,6 +29,13 @@ export function AccountPage() {
   const [deleteAccountError, setDeleteAccountError] = useState<string | null>(
     null
   );
+
+  const [showChangePhotoModal, setShowChangePhotoModal] = useState(false);
+
+  const handleShowChangePhotoModal = () => {
+    setShowChangePhotoModal(true);
+
+  };
 
   const [gmailConnected, setGmailConnected] = useState(false);
   const [gmailBusy, setGmailBusy] = useState(false);
@@ -251,7 +258,7 @@ export function AccountPage() {
             <hr className="w-full border-t-1 border-gray-400" />
 
             {/*Profile image*/}
-            <div className="flex flex-col items-center justify-evenly mt-6 mb-2">
+            <div className="flex flex-row items-center justify-evenly mt-6 mb-2">
               <div className="w-24 h-24 rounded-full bg-white mb-4 aspect-square">
                 <img
                   src={profilePicURL || userIcon}
@@ -261,12 +268,8 @@ export function AccountPage() {
               </div>
               <div className="flex flex-col gap-2 text-center items-center jusitfy-evenly">
                 <div className="flex gap-4">
-                  <Button onClick={() => console.log("Change Photo clicked")}>
+                  <Button onClick={() => handleShowChangePhotoModal()}>
                     Change
-                  </Button>
-
-                  <Button onClick={() => console.log("Remove Photo clicked")}>
-                    Remove
                   </Button>
                 </div>
                 <div className="text-sm font-light">
@@ -455,12 +458,16 @@ export function AccountPage() {
           </section>
         </div>
       </main>
-      {/*Controls the Modal that allows users to specify the initial number of days to sync from gmail*/}
+      {/*Modals Overlays*/}
       <DaysToSync
         show={showDaysToSync}
         options={daysToSyncOptions}
         onSelection={handleDaysSelection}
         onCancel={() => setShowDaysToSync(false)}
+      />
+      <ChangePhotoModal
+        showModal={showChangePhotoModal}
+        setShowModal={setShowChangePhotoModal}
       />
     </div>
   );

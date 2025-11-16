@@ -6,7 +6,7 @@ import type { User } from "firebase/auth";
 import { updateProfile } from "firebase/auth";
 
 // Define the shape of the authentication context
-type AuthCtx = { user: User | null; loading: boolean; applyProfileUpdate: (displayName: string, photoUrl: string) => Promise<void>; };
+type AuthCtx = { user: User | null; loading: boolean; applyProfileUpdate: (displayName?: string, photoUrl?: string) => Promise<void>; };
 
 // Create a global context for authentication
 const Ctx = createContext<AuthCtx>({ user: null, loading: true, applyProfileUpdate: async () => {} });
@@ -30,7 +30,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         });
     }, []);
 
-    const applyProfileUpdate = async (displayName: string, photoUrl: string) => {
+    const applyProfileUpdate = async (displayName?: string, photoUrl?: string) => {
         const userToUpdate = user;
         if (!userToUpdate) {
             throw new Error("No user is currently logged in.");
