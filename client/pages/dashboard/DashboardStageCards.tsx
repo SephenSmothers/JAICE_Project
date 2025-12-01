@@ -1,15 +1,4 @@
 import React from "react";
-//import { useJobStats } from "@/client/state/useJobStats"; // adjust path
-
-/* ---------- Card: Applications by Stage (Bars) ---------- */
-// export function ApplicationsByStageCard() {
-//   const { stats } = useJobStats();
-//   const data = [
-//     { key: "Applied", value: stats.applied, color: "from-[#3a0f2e] to-[#1a1f2c]" },
-//     { key: "Interview", value: stats.interview, color: "from-[#164452] to-[#0f2e35]" },
-//     { key: "Offer", value: stats.offers, color: "from-[#32274e] to-[#251f3e]" },
-//     { key: "Accepted", value: stats.accepted, color: "from-[#1e3351] to-[#16263c]" },
-//   ];
 
 export function ApplicationsByStageCard() {
   //const { stats } = useJobStats();
@@ -51,17 +40,7 @@ export function ApplicationsByStageCard() {
 
 /* ---------- Card: Split by Stage (Donut) ---------- */
 export function SplitByStageCard() {
-  //const { stats } = useJobStats();
-  //const total = Math.max(1, stats.applied + stats.interview + stats.offers + stats.accepted);
   const total = 15;
-
-//   const slices = [
-//     { key: "Applied", value: stats.applied, color: "#76c7c5" },
-//     { key: "Interview", value: stats.interview, color: "#f1d36b" },
-//     { key: "Offer", value: stats.offers, color: "#4c79ff" },
-//     { key: "Accepted", value: stats.accepted, color: "#ff6b41" },
-//   ];
-
 
   const slices = [
     { key: "Applied", value: 5, color: "#76c7c5" },
@@ -93,7 +72,7 @@ export function SplitByStageCard() {
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="shrink-0">
           <g transform={`translate(${size / 2}, ${size / 2})`}>
             <circle r={r} fill="transparent" stroke="#0d1b24" strokeWidth={thickness} />
-            {arcs.map((a, i) => (
+            {arcs.map((a) => (
               <circle
                 key={a.key}
                 r={r}

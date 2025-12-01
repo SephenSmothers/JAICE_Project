@@ -1,9 +1,20 @@
 // import { localfiles } from "@/directory/path/to/localimport";
 
 import React from "react";
+import { useNotificationSettings, type NotificationSettings } from "./useNotificationSettings";
 //import { Search } from "lucide-react";
 
 export function NotificationPage() {
+  const { settings, updateSetting, loading } = useNotificationSettings();
+
+  if (loading || !settings) {
+    return (
+      <div className="w-full h-full flex items-center justify-center text-white">
+        Loading...
+      </div>
+    );
+  }
+
   return (
     <div className="w-full h-full bg-slate-950 text-slate-100"
     style={{background: "var(--color-bg)"}}>
@@ -23,21 +34,49 @@ export function NotificationPage() {
             <Section
               title="Application Updates"
               desc="These are notifications about changes to your job applications."
+              rows={[
+                { key: "app_updates_inapp", label: "In-App Alert" },
+                { key: "app_updates_email", label: "Email" },
+                { key: "app_updates_sms", label: "SMS" },
+              ]}
+              settings={settings}
+              updateSetting={updateSetting}
             />
             <Divider />
             <Section
               title="Email & Parsing Alerts"
               desc="These are notifications when new jobs posts, recruiter details, or documents are detected from your linked email(s)."
+              rows={[
+                { key: "email_parsing_inapp", label: "In-App Alert" },
+                { key: "email_parsing_email", label: "Email" },
+                { key: "email_parsing_sms", label: "SMS" },
+              ]}
+              settings={settings}
+              updateSetting={updateSetting}
             />
             <Divider />
             <Section
               title="Reminders & Deadlines"
               desc="These are notifications that remind you about interviews, follow-ups, or pending tasks."
+              rows={[
+                { key: "reminders_inapp", label: "In-App Alert" },
+                { key: "reminders_email", label: "Email" },
+                { key: "reminders_sms", label: "SMS" },
+              ]}
+              settings={settings}
+              updateSetting={updateSetting}
             />
             <Divider />
             <Section
               title="System & Account"
               desc="These are notifications about your account security, login activity, or sync issues."
+              rows={[
+                { key: "system_inapp", label: "In-App Alert" },
+                { key: "system_email", label: "Email" },
+                { key: "system_sms", label: "SMS" },
+              ]}
+              settings={settings}
+              updateSetting={updateSetting}
             />
           </div>
         </div>
@@ -50,12 +89,20 @@ function Divider() {
   return <div className="h-px w-full my-6 bg-slate-800" />;
 }
 
+type SectionRow = {
+  key: keyof NotificationSettings;
+  label: string;
+};
+
 type SectionProps = {
   title: string;
   desc: string;
-};
+  rows: SectionRow[];
+  settings: NotificationSettings;
+  updateSetting: (key: keyof NotificationSettings, value: boolean) => void;
+}
 
-function Section({ title, desc }: SectionProps) {
+function Section({ title, desc, rows, settings, updateSetting }: SectionProps) {
   return (
     <div className="w-full">
       {/* Title & description */}
@@ -66,9 +113,14 @@ function Section({ title, desc }: SectionProps) {
 
       {/* Channel rows */}
       <div className="space-y-3">
-        <ChannelRow label="In‑App Alert" defaultOn />
-        <ChannelRow label="Email" />
-        <ChannelRow label="SMS" />
+        {rows.map((r) => (
+          <ChannelRow
+            key={r.key}
+            label={r.label}
+            value={settings[r.key]}
+            onChange={(val) => updateSetting(r.key, val)}
+            />
+        ))}
       </div>
     </div>
   );
@@ -76,12 +128,12 @@ function Section({ title, desc }: SectionProps) {
 
 type ChannelRowProps = {
   label: string;
-  defaultOn?: boolean;
-};
+  value: boolean;
+  onChange: (value: boolean) => void;
+}
 
-function ChannelRow({ label, defaultOn = false }: ChannelRowProps) {
-  const [on, setOn] = React.useState<boolean>(defaultOn);
-  const name = React.useId(); // keeps each row's radios grouped
+function ChannelRow({ label, value, onChange }: ChannelRowProps) {
+  const name = React.useId();
 
   return (
     <div className="grid grid-cols-12 items-center text-sm">
@@ -92,19 +144,21 @@ function ChannelRow({ label, defaultOn = false }: ChannelRowProps) {
           <label
             className="inline-flex items-center gap-2 cursor-pointer"
             htmlFor={`${name}-off`}
-            onClick={() => setOn(false)}
+            onClick={() => onChange(false)}
           >
             <span className="relative inline-flex h-4 w-4 items-center justify-center">
               <input
                 id={`${name}-off`}
                 type="radio"
                 name={name}
-                checked={!on}
-                onChange={() => setOn(false)}
+                checked={!value}
+                onChange={() => onChange(false)}
                 className="sr-only"
               />
               <span className="h-4 w-4 rounded-full border border-slate-600 bg-slate-800" />
-              {!on && <span className="absolute h-2 w-2 rounded-full bg-slate-200" />}
+              {!value && (
+                <span className="absolute h-2 w-2 rounded-full bg-slate-200" />
+              )}
             </span>
             <span className="text-slate-400 text-xs">Off</span>
           </label>
@@ -113,19 +167,21 @@ function ChannelRow({ label, defaultOn = false }: ChannelRowProps) {
           <label
             className="inline-flex items-center gap-2 cursor-pointer"
             htmlFor={`${name}-on`}
-            onClick={() => setOn(true)}
+            onClick={() => onChange(true)}
           >
             <span className="relative inline-flex h-4 w-4 items-center justify-center">
               <input
                 id={`${name}-on`}
                 type="radio"
                 name={name}
-                checked={on}
-                onChange={() => setOn(true)}
+                checked={value}
+                onChange={() => onChange(true)}
                 className="sr-only"
               />
               <span className="h-4 w-4 rounded-full border border-slate-600 bg-slate-800" />
-              {on && <span className="absolute h-2 w-2 rounded-full bg-slate-200" />}
+              {value && (
+                <span className="absolute h-2 w-2 rounded-full bg-slate-200" />
+              )}
             </span>
             <span className="text-slate-400 text-xs">On</span>
           </label>

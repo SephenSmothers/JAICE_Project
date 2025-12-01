@@ -8,6 +8,7 @@ from client_api.api.auth_api import router as auth_router
 from client_api.api.jobs import router as job_router
 from client_api.api.dashboard import router as dashboard_router
 from client_api.api.resume import router as resume_router
+from client_api.api.notifications import router as notification_router
 from client_api.services.supabase_client import check_db_pool_status, connect_to_db, close_db_connection
 import httpx
 import redis.asyncio as redis
@@ -80,6 +81,7 @@ app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(job_router, prefix="/api/jobs", tags=['Jobs'])
 app.include_router(dashboard_router, prefix="/api")
 app.include_router(resume_router, prefix="/api/resume", tags=["Resume"])
+app.include_router(notification_router, prefix="/api")
 
 # gmail API endpoints
 @app.get("/gmail/messages", tags=["Gmail"], summary="Get Gmail Messages")
