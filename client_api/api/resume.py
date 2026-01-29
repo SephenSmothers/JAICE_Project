@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from typing import Any, List, Optional
 from fpdf import FPDF
 from common.logger import get_logger
+import re
 
 router = APIRouter(tags=["resume"])
 logging = get_logger()
@@ -64,6 +65,75 @@ async def improve_bullet(payload: ImproveBulletRequest) -> ImproveBulletResponse
     except Exception as e:
         logging.error("Error improving resume bullet", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to improve bullet: {e}")
+    
+def safe_multicell(pdf: FPDF, text: str, h: float = 5.0, indent: float = 0.0):
+    text = pdf_safe(text)
+    w = (pdf.w - pdf.l_margin - pdf.r_margin) - indent
+    if w < 10:
+        w = 10
+    pdf.set_x(pdf.l_margin + indent)
+    pdf.multi_cell(w, h, text)
+    pdf.set_x(pdf.l_margin)
+
+    
+
+def pdf_safe(text: str) -> str:
+    """
+    Make text safe for FPDF core fonts (latin-1).
+    Replaces common Unicode punctuation with ASCII and drops anything still unsupported.
+    """
+    if not text:
+        return ""
+
+    replacements = {
+        "\u2013": "-",   # en dash
+        "\u2014": "-",   # em dash
+        "\u2212": "-",   # minus
+        "\u2018": "'",   # left single quote
+        "\u2019": "'",   # right single quote
+        "\u201C": '"',   # left double quote
+        "\u201D": '"',   # right double quote
+        "\u2022": "-",   # bullet
+        "\u00A0": " ",   # non-breaking space
+    }
+    for k, v in replacements.items():
+        text = text.replace(k, v)
+
+    # Normalize whitespace
+    text = re.sub(r"\s+", " ", text).strip()
+
+    # Drop anything not encodable in latin-1
+    return text.encode("latin-1", errors="ignore").decode("latin-1")
+
+
+def line_left_right(pdf: FPDF, left: str, right: str, h: float = 5.0, right_font_size: int = 9):
+    """
+    Print left text and right text on the same line, with right aligned.
+    Falls back gracefully if strings are long.
+    """
+    left = pdf_safe(left)
+    right = pdf_safe(right)
+
+    page_w = pdf.w - pdf.l_margin - pdf.r_margin
+
+    # Measure right side width
+    pdf.set_font("Helvetica", size=right_font_size)
+    right_w = pdf.get_string_width(right) + 2 if right else 0
+
+    # Left side uses the remaining width
+    left_w = max(page_w - right_w, 10)
+
+    # Print
+    pdf.set_x(pdf.l_margin)
+    pdf.set_font("Helvetica", style="B", size=11)
+    pdf.cell(left_w, h, left, ln=0)
+
+    if right:
+        pdf.set_font("Helvetica", size=right_font_size)
+        pdf.cell(right_w, h, right, ln=1, align="R")
+    else:
+        pdf.ln(h)
+
 
 
 class ImproveSummaryRequest(BaseModel):
@@ -358,27 +428,25 @@ async def export_resume_pdf(payload: ResumeData) -> Response:
                 header_parts = [exp.jobTitle, exp.company, exp.location]
                 header = " | ".join([h for h in header_parts if h])
 
-                pdf.set_font("Helvetica", style="B", size=11)
-                pdf.multi_cell(0, 5, header or "Job Title")
+                dates = " - ".join([d for d in [exp.startDate or "", exp.endDate or ""] if d])
 
-                dates = " - ".join(
-                    [d for d in [exp.startDate or "", exp.endDate or ""] if d]
-                )
-                if dates:
-                    pdf.set_font("Helvetica", size=9)
-                    pdf.cell(0, 4, dates, ln=True)
+                # Header (left) + Dates (right) on one line
+                line_left_right(pdf, header or "Job Title", dates, h=5.5, right_font_size=9)
 
-                # bullets
+                # Bullets
+                bullets = exp.bullets or []
                 if exp.bullets:
                     pdf.ln(1)
                     pdf.set_font("Helvetica", size=11)
+
                     for b in exp.bullets:
-                        text = (b.text or "").strip()
-                        if not text:
+                        raw = (b.text or "").strip()
+                        if not raw:
                             continue
-                        pdf.cell(4)  # small indent
-                        # Use ASCII dash instead of Unicode bullet
-                        pdf.multi_cell(0, 5, f"- {text}")
+                        safe_multicell(pdf, f"- {raw}", h=5, indent=4)
+
+                    pdf.ln(1)
+
                 pdf.ln(2)
 
         # Education
@@ -391,16 +459,11 @@ async def export_resume_pdf(payload: ResumeData) -> Response:
                 header_parts = [ed.degree, ed.school]
                 header = " | ".join([h for h in header_parts if h])
 
-                pdf.set_font("Helvetica", style="B", size=11)
-                pdf.multi_cell(0, 5, header or "Degree")
+                dates = " - ".join([d for d in [ed.startDate or "", ed.endDate or ""] if d])
 
-                dates = " - ".join(
-                    [d for d in [ed.startDate or "", ed.endDate or ""] if d]
-                )
-                if dates:
-                    pdf.set_font("Helvetica", size=9)
-                    pdf.cell(0, 4, dates, ln=True)
-                pdf.ln(2)
+                line_left_right(pdf, header or "Degree", dates, h=5.5, right_font_size=9)
+                pdf.ln(1)
+
 
         # Skills
         skills = [s.strip() for s in (payload.skills or []) if s.strip()]
